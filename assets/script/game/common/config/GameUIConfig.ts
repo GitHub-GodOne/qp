@@ -15,7 +15,9 @@ export enum UIID {
     Confirm,
     CreateRoomViewComp,
     LeisureGroundViewComp,
-    ShoppingViewComp
+    ShoppingViewComp,
+    RoomViewComp,
+    GameRecordsViewComp,
 }
 
 /** 打开界面方式的配置数据 */
@@ -25,4 +27,6 @@ export var UIConfigData: { [key: number]: UIConfig } = {
     [UIID.CreateRoomViewComp]: { layer: LayerType.UI, prefab: "gui/create_room/create_room" },
     [UIID.LeisureGroundViewComp]: { layer: LayerType.UI, prefab: "gui/leisure_ground/leisure_ground" },
     [UIID.ShoppingViewComp]: { layer: LayerType.Dialog, prefab: "gui/shopping/shopping" },
+    [UIID.RoomViewComp]: { layer: LayerType.UI, prefab: "gui/bull_bull/bull_bull" },
+    [UIID.GameRecordsViewComp]: { layer: LayerType.Dialog, prefab: "gui/game_records/game_records" },
 }

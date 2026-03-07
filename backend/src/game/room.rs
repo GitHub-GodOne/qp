@@ -6,6 +6,8 @@ use tokio::sync::broadcast;
 
 use super::bull_bull::BullType;
 use super::deck::Card;
+use super::room_type::RoomType;
+use super::room_config::RoomConfig;
 
 pub static ROOM_MANAGER: LazyLock<RoomManager> = LazyLock::new(RoomManager::new);
 
@@ -61,11 +63,32 @@ pub struct GameRoom {
     pub banker_pid: Option<String>,
     pub tx: broadcast::Sender<String>,
     pub timeout_handle: Option<tokio::task::JoinHandle<()>>,
+    pub room_type: RoomType,
+    pub base_bet: u32,
+    pub config: RoomConfig,
+    pub current_round: u16,
+    pub is_custom: bool, // 是否是自定义房间（通过创建房间接口创建）
 }
 
 impl GameRoom {
-    fn new(room_id: String, owner_pid: String, max_players: usize) -> Self {
+    fn new(room_id: String, owner_pid: String, max_players: usize, room_type: RoomType, config: RoomConfig, is_custom: bool) -> Self {
         let (tx, _) = broadcast::channel(BROADCAST_CAPACITY);
+        // 使用用户配置的底分，而不是房间类型的默认底分
+        // base_bet = (base_score_numerator / base_score_denominator) * 房间类型基础倍数
+        let room_base = room_type.base_bet();
+        let base_bet = (room_base * config.base_score_numerator as u32) / config.base_score_denominator as u32;
+
+        tracing::info!(
+            "创建 GameRoom: room_id={}, room_type={:?}, room_base={}, base_score={}/{}, calculated_base_bet={}, is_custom={}",
+            room_id,
+            room_type,
+            room_base,
+            config.base_score_numerator,
+            config.base_score_denominator,
+            base_bet,
+            is_custom
+        );
+
         Self {
             room_id,
             owner_pid,
@@ -76,6 +99,11 @@ impl GameRoom {
             banker_pid: None,
             tx,
             timeout_handle: None,
+            room_type,
+            base_bet,
+            config,
+            current_round: 0,
+            is_custom,
         }
     }
     pub fn add_player(
@@ -87,8 +115,11 @@ impl GameRoom {
         if self.players.len() >= self.max_players {
             return Err("room is full");
         }
-        if self.players.iter().any(|p| p.user_pid == user_pid) {
-            return Err("already in room");
+        // If player already exists, mark them as online and return their seat
+        if let Some(existing) = self.players.iter_mut().find(|p| p.user_pid == user_pid) {
+            existing.is_offline = false;
+            existing.coins = coins; // Update coins in case they changed
+            return Ok(existing.seat);
         }
         let seat = self.next_seat();
         self.players.push(Player {
@@ -164,6 +195,14 @@ impl GameRoom {
             h.abort();
         }
         self.purge_offline();
+        self.current_round += 1;
+
+        // 检查是否达到最大局数
+        if self.current_round >= self.config.rounds {
+            // 游戏结束，可以在这里处理支付逻辑
+            self.status = RoomStatus::Finished;
+        }
+
         self.phase = GamePhase::Waiting;
         self.banker_pid = None;
         for p in &mut self.players {
@@ -202,8 +241,11 @@ impl RoomManager {
         room_id: &str,
         owner_pid: &str,
         max_players: usize,
+        room_type: RoomType,
+        config: RoomConfig,
+        is_custom: bool,
     ) -> broadcast::Receiver<String> {
-        let room = GameRoom::new(room_id.to_string(), owner_pid.to_string(), max_players);
+        let room = GameRoom::new(room_id.to_string(), owner_pid.to_string(), max_players, room_type, config, is_custom);
         let rx = room.tx.subscribe();
         self.rooms.insert(room_id.to_string(), room);
         rx
@@ -234,11 +276,13 @@ impl RoomManager {
         self.rooms.contains_key(room_id)
     }
 
-    pub fn find_available_room(&self) -> Option<String> {
+    pub fn find_available_room(&self, room_type: RoomType) -> Option<String> {
         let mut best: Option<(String, usize)> = None;
         for entry in self.rooms.iter() {
             let room = entry.value();
-            if room.status == RoomStatus::Waiting && room.players.len() < room.max_players {
+            if room.room_type == room_type
+                && room.status == RoomStatus::Waiting
+                && room.players.len() < room.max_players {
                 let ready_count = room.players.iter().filter(|p| p.is_ready).count();
                 if best
                     .as_ref()

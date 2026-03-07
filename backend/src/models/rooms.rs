@@ -12,6 +12,7 @@ impl Model {
         owner_pid: Uuid,
         name: &str,
         max_players: i16,
+        room_password: Option<String>,
     ) -> ModelResult<Self> {
         let room = rooms::ActiveModel {
             room_id: ActiveValue::set(Uuid::new_v4().to_string()),
@@ -19,11 +20,24 @@ impl Model {
             name: ActiveValue::set(name.to_string()),
             max_players: ActiveValue::set(max_players),
             status: ActiveValue::set("waiting".to_string()),
+            room_password: ActiveValue::set(room_password),
             ..Default::default()
         }
         .insert(db)
         .await?;
         Ok(room)
+    }
+
+    pub async fn find_by_password(db: &DatabaseConnection, password: &str) -> ModelResult<Self> {
+        let room = rooms::Entity::find()
+            .filter(
+                model::query::condition()
+                    .eq(rooms::Column::RoomPassword, password)
+                    .build(),
+            )
+            .one(db)
+            .await?;
+        room.ok_or(ModelError::EntityNotFound)
     }
 
     pub async fn find_by_room_id(db: &DatabaseConnection, room_id: &str) -> ModelResult<Self> {

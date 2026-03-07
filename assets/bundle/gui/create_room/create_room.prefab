@@ -37,17 +37,17 @@
     "_active": true,
     "_components": [
       {
-        "__id__": 1170
+        "__id__": 1171
       },
       {
-        "__id__": 1172
+        "__id__": 1173
       },
       {
-        "__id__": 1174
+        "__id__": 1175
       }
     ],
     "_prefab": {
-      "__id__": 1176
+      "__id__": 1177
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -1241,7 +1241,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 47.65999999999997,
-      "y": 61.984999999999985,
+      "y": 61.985000000000014,
       "z": 0
     },
     "_lrot": {
@@ -1282,7 +1282,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 1160,
-      "height": 389.99999999999994
+      "height": 390
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -1379,7 +1379,7 @@
     "_target": null,
     "_left": 67.65999999999994,
     "_right": -27.659999999999933,
-    "_top": 43.01500000000003,
+    "_top": 43.014999999999986,
     "_bottom": 166.985,
     "_horizontalCenter": 0,
     "_verticalCenter": 0,
@@ -1434,7 +1434,7 @@
         "__id__": 82
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 128
@@ -1539,8 +1539,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 100.01358752365316,
-      "height": 50.400000000000006
+      "width": 100.0195154480178,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -1578,7 +1578,7 @@
     "_string": "AA支付",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -1698,8 +1698,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 149.99109745450244,
-      "height": 50.400000000000006
+      "width": 149.99997037128338,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -1737,7 +1737,7 @@
     "_string": "大赢家支付",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -1857,8 +1857,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -1896,7 +1896,7 @@
     "_string": "房主支付",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -3091,8 +3091,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -3130,7 +3130,7 @@
     "_string": "支付方式",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -3208,7 +3208,7 @@
         "__id__": 152
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 198
@@ -3313,8 +3313,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 46.68179628367097,
-      "height": 50.400000000000006
+      "width": 46.684556485765576,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -3352,7 +3352,7 @@
     "_string": "4人",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -3472,8 +3472,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 46.68179628367097,
-      "height": 50.400000000000006
+      "width": 46.684556485765576,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -3511,7 +3511,7 @@
     "_string": "6人",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -3631,8 +3631,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 46.68179628367097,
-      "height": 50.400000000000006
+      "width": 46.684556485765576,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -3670,7 +3670,7 @@
     "_string": "8人",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -4865,8 +4865,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 126.67209153077694,
-      "height": 50.400000000000006
+      "width": 126.67961244058455,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -4904,7 +4904,7 @@
     "_string": "人        数",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -4985,7 +4985,7 @@
         "__id__": 228
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 288
@@ -5090,8 +5090,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 33.36715358554096,
-      "height": 50.400000000000006
+      "width": 33.3691248230178,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -5129,7 +5129,7 @@
     "_string": "10",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -5249,8 +5249,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 33.36715358554096,
-      "height": 50.400000000000006
+      "width": 33.3691248230178,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -5288,7 +5288,7 @@
     "_string": "20",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -5408,8 +5408,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 33.36715358554096,
-      "height": 50.400000000000006
+      "width": 33.3691248230178,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -5447,7 +5447,7 @@
     "_string": "30",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -5567,8 +5567,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 33.36715358554096,
-      "height": 50.400000000000006
+      "width": 33.3691248230178,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -5606,7 +5606,7 @@
     "_string": "40",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -7149,8 +7149,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 126.67209153077694,
-      "height": 50.400000000000006
+      "width": 126.67961244058455,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -7188,7 +7188,7 @@
     "_string": "局        数",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -7266,7 +7266,7 @@
         "__id__": 312
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 358
@@ -7371,8 +7371,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -7410,7 +7410,7 @@
     "_string": "明牌抢庄",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -7530,8 +7530,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -7569,7 +7569,7 @@
     "_string": "无牛下庄",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -7689,8 +7689,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -7728,7 +7728,7 @@
     "_string": "通比做庄",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -8923,8 +8923,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -8962,7 +8962,7 @@
     "_string": "抢庄类型",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -9043,7 +9043,7 @@
         "__id__": 388
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 448
@@ -9148,8 +9148,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 16.68357679277048,
-      "height": 50.400000000000006
+      "width": 16.6845624115089,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -9187,7 +9187,7 @@
     "_string": "1",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -9307,8 +9307,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 16.68357679277048,
-      "height": 50.400000000000006
+      "width": 16.6845624115089,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -9346,7 +9346,7 @@
     "_string": "2",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -9466,8 +9466,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 16.68357679277048,
-      "height": 50.400000000000006
+      "width": 16.6845624115089,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -9505,7 +9505,7 @@
     "_string": "3",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -9625,8 +9625,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 16.68357679277048,
-      "height": 50.400000000000006
+      "width": 16.6845624115089,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -9664,7 +9664,7 @@
     "_string": "4",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -11207,8 +11207,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -11246,7 +11246,7 @@
     "_string": "最大抢庄",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -11327,7 +11327,7 @@
         "__id__": 478
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 538
@@ -11432,8 +11432,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 29.99821949090049,
-      "height": 50.400000000000006
+      "width": 29.999994074256676,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -11471,7 +11471,7 @@
     "_string": "无",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -11591,8 +11591,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 63.36537307644145,
-      "height": 50.400000000000006
+      "width": 63.369118897274475,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -11630,7 +11630,7 @@
     "_string": "10倍",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -11750,8 +11750,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 63.36537307644145,
-      "height": 50.400000000000006
+      "width": 63.369118897274475,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -11789,7 +11789,7 @@
     "_string": "20倍",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -11909,8 +11909,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 63.36537307644145,
-      "height": 50.400000000000006
+      "width": 63.369118897274475,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -11948,7 +11948,7 @@
     "_string": "30倍",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -13491,8 +13491,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -13530,7 +13530,7 @@
     "_string": "闲家推注",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -13617,7 +13617,7 @@
         "__id__": 580
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 668
@@ -13722,8 +13722,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 41.70161015416296,
-      "height": 50.400000000000006
+      "width": 41.7040778595267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -13761,7 +13761,7 @@
     "_string": "1/2",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -13881,8 +13881,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 41.70161015416296,
-      "height": 50.400000000000006
+      "width": 41.7040778595267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -13920,7 +13920,7 @@
     "_string": "2/4",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -14040,8 +14040,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 41.70161015416296,
-      "height": 50.400000000000006
+      "width": 41.7040778595267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -14079,7 +14079,7 @@
     "_string": "4/8",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -14199,8 +14199,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 58.38518694693344,
-      "height": 50.400000000000006
+      "width": 58.3886402710356,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -14238,7 +14238,7 @@
     "_string": "5/10",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -14358,8 +14358,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 43.356787935496435,
-      "height": 50.400000000000006
+      "width": 43.35935524752225,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -14397,7 +14397,7 @@
     "_string": "1-5",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -14517,8 +14517,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 43.356787935496435,
-      "height": 50.400000000000006
+      "width": 43.35935524752225,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -14556,7 +14556,7 @@
     "_string": "4-8",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -16795,8 +16795,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 118.33763496215494,
-      "height": 50.400000000000006
+      "width": 118.34465940407566,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -16834,7 +16834,7 @@
     "_string": "底       分",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -16909,7 +16909,7 @@
         "__id__": 686
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 718
@@ -17014,8 +17014,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 585.0384624749555,
-      "height": 50.400000000000006
+      "width": 585.0730525637136,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -17053,7 +17053,7 @@
     "_string": "经典模式:牛牛x4，牛九x3，牛八x2，牛七x2",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -17173,8 +17173,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 630.6094515249332,
-      "height": 50.39999999999999
+      "width": 630.796838655441,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -17212,7 +17212,7 @@
     "_string": "疯狂加倍:牛一牛牛1～10倍，特殊牌15～20倍，同花顺25倍",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 33.69,
+    "_actualFontSize": 37.08,
     "_fontSize": 24,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -18059,8 +18059,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -18098,7 +18098,7 @@
     "_string": "翻倍规则",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -18206,7 +18206,7 @@
         "__id__": 802
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 808
@@ -18311,8 +18311,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 173.33930024905388,
-      "height": 50.400000000000006
+      "width": 173.3495619690534,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -18350,7 +18350,7 @@
     "_string": "同花顺(25倍)",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -18470,8 +18470,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 173.33930024905388,
-      "height": 50.400000000000006
+      "width": 173.3495619690534,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -18509,7 +18509,7 @@
     "_string": "炸弹牛(20倍)",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -18629,8 +18629,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 173.33930024905388,
-      "height": 50.400000000000006
+      "width": 173.3495619690534,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -18668,7 +18668,7 @@
     "_string": "五小牛(19倍)",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -18788,8 +18788,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 143.34108075815337,
-      "height": 50.400000000000006
+      "width": 143.34956789479673,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -18827,7 +18827,7 @@
     "_string": "葫芦(18倍)",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -18947,8 +18947,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 173.33930024905388,
-      "height": 50.400000000000006
+      "width": 173.3495619690534,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -18986,7 +18986,7 @@
     "_string": "同花牛(17倍)",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -19106,8 +19106,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 173.33930024905388,
-      "height": 50.400000000000006
+      "width": 173.3495619690534,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -19145,7 +19145,7 @@
     "_string": "五花牛(16倍)",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -19265,8 +19265,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 173.33930024905388,
-      "height": 50.400000000000006
+      "width": 173.3495619690534,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -19304,7 +19304,7 @@
     "_string": "顺子牛(15倍)",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -20326,8 +20326,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -20365,7 +20365,7 @@
     "_string": "特殊牌型",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -20440,7 +20440,7 @@
         "__id__": 826
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 858
@@ -20545,8 +20545,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 29.99821949090049,
-      "height": 50.400000000000006
+      "width": 29.999994074256676,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -20584,7 +20584,7 @@
     "_string": "无",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -20704,8 +20704,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 149.99109745450244,
-      "height": 50.400000000000006
+      "width": 149.99997037128338,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -20743,7 +20743,7 @@
     "_string": "经典王癞子",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -21590,8 +21590,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -21629,7 +21629,7 @@
     "_string": "王癞玩法",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -21707,7 +21707,7 @@
         "__id__": 882
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 928
@@ -21812,8 +21812,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 89.99465847270146,
-      "height": 50.400000000000006
+      "width": 89.99998222277003,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -21851,7 +21851,7 @@
     "_string": "有花牌",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -21971,8 +21971,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 123.36181205824242,
-      "height": 50.400000000000006
+      "width": 123.36910704578783,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -22010,7 +22010,7 @@
     "_string": "无花有10",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -22130,8 +22130,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 123.36181205824242,
-      "height": 50.400000000000006
+      "width": 123.36910704578783,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -22169,7 +22169,7 @@
     "_string": "无花无10",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -23364,8 +23364,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 118.33763496215494,
-      "height": 50.400000000000006
+      "width": 118.34465940407566,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -23403,7 +23403,7 @@
     "_string": "花       牌",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -23484,7 +23484,7 @@
         "__id__": 958
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 1018
@@ -23589,8 +23589,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -23628,7 +23628,7 @@
     "_string": "手动开始",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -23748,8 +23748,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 136.67645475637244,
-      "height": 50.400000000000006
+      "width": 136.6845387085356,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -23787,7 +23787,7 @@
     "_string": "满2人开始",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -23907,8 +23907,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 136.67645475637244,
-      "height": 50.400000000000006
+      "width": 136.6845387085356,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -23946,7 +23946,7 @@
     "_string": "满3人开始",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -24066,8 +24066,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -24105,7 +24105,7 @@
     "_string": "人满开始",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -25648,8 +25648,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -25687,7 +25687,7 @@
     "_string": "游戏开始",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -25789,7 +25789,7 @@
         "__id__": 1090
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 1096
@@ -25894,8 +25894,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -25933,7 +25933,7 @@
     "_string": "明牌下注",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -26053,8 +26053,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 179.98931694540292,
-      "height": 50.400000000000006
+      "width": 179.99996444554006,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -26092,7 +26092,7 @@
     "_string": "禁止解散房间",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -26212,8 +26212,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -26251,7 +26251,7 @@
     "_string": "随机位置",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -26371,8 +26371,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 89.99465847270146,
-      "height": 50.400000000000006
+      "width": 89.99998222277003,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -26410,7 +26410,7 @@
     "_string": "防作弊",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -26530,8 +26530,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -26569,7 +26569,7 @@
     "_string": "允许观战",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -26689,8 +26689,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 119.99287796360196,
-      "height": 50.400000000000006
+      "width": 119.9999762970267,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -26728,7 +26728,7 @@
     "_string": "下注限制",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -27614,8 +27614,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 110.00317839353295,
-      "height": 50.400000000000006
+      "width": 110.00970636756675,
+      "height": 50.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -27653,7 +27653,7 @@
     "_string": "玩      法",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 42.112500000000004,
+    "_actualFontSize": 46.349999999999994,
     "_fontSize": 30,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -27724,7 +27724,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 870,
-      "height": 1300
+      "height": 200
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -27907,14 +27907,14 @@
     "_active": true,
     "_components": [
       {
-        "__id__": 1165
+        "__id__": 1166
       },
       {
-        "__id__": 1167
+        "__id__": 1168
       }
     ],
     "_prefab": {
-      "__id__": 1169
+      "__id__": 1170
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -28279,8 +28279,8 @@
     ],
     "value": {
       "__type__": "cc.Size",
-      "width": 68.33089555042297,
-      "height": 50.400000000000006
+      "width": 68.33494118502225,
+      "height": 50.4
     }
   },
   {
@@ -28421,6 +28421,9 @@
       },
       {
         "__id__": 1163
+      },
+      {
+        "__id__": 1165
       }
     ],
     "removedComponents": []
@@ -28570,8 +28573,8 @@
     ],
     "value": {
       "__type__": "cc.Size",
-      "width": 89.99465847270146,
-      "height": 50.400000000000006
+      "width": 89.99998222277003,
+      "height": 50.4
     }
   },
   {
@@ -28664,6 +28667,16 @@
     ]
   },
   {
+    "__type__": "CCPropertyOverrideInfo",
+    "targetInfo": {
+      "__id__": 1148
+    },
+    "propertyPath": [
+      "_active"
+    ],
+    "value": false
+  },
+  {
     "__type__": "cc.UITransform",
     "_name": "",
     "_objFlags": 0,
@@ -28673,7 +28686,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 1166
+      "__id__": 1167
     },
     "_contentSize": {
       "__type__": "cc.Size",
@@ -28701,7 +28714,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 1168
+      "__id__": 1169
     },
     "_alignFlags": 13,
     "_target": null,
@@ -28750,7 +28763,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 1171
+      "__id__": 1172
     },
     "_contentSize": {
       "__type__": "cc.Size",
@@ -28778,7 +28791,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 1173
+      "__id__": 1174
     },
     "_id": ""
   },
@@ -28796,7 +28809,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 1175
+      "__id__": 1176
     },
     "_alignFlags": 45,
     "_target": null,

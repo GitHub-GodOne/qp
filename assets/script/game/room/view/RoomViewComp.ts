@@ -17,6 +17,7 @@ import {
   Widget,
   tween,
   EditBox,
+  BlockInputEvents,
 } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
@@ -95,7 +96,7 @@ const HAND_GAP = 62;
 const MY_CARD_X = -120;
 const MY_CARD_Y = -230; // 自己牌的起始位置
 const SEAT_CARD_OFF = 100;
-const SEAT_CARD_GAP = 28;
+const SEAT_CARD_GAP = 45; // 增大间隔，让牌更容易看清
 const TABLE_CENTER = new Vec3(0, 30, 0);
 
 /** 斗牛房间视图 */
@@ -216,6 +217,8 @@ export class RoomViewComp extends CCView<Room> {
     const w = bg.addComponent(Widget);
     w.isAlignTop = w.isAlignBottom = w.isAlignLeft = w.isAlignRight = true;
     w.top = w.bottom = w.left = w.right = 0;
+    // 添加 BlockInputEvents 组件阻止点击穿透到下层
+    bg.addComponent(BlockInputEvents);
   }
 
   private topBar() {
@@ -282,7 +285,7 @@ export class RoomViewComp extends CCView<Room> {
       "",
       18,
       new Color(255, 100, 100),
-      new Vec3(0, TABLE_CENTER.y - 40, 0),
+      new Vec3(0, TABLE_CENTER.y - 80, 0),
       new Size(140, 28),
     );
     this._countdownLbl.node.active = false;
@@ -305,6 +308,18 @@ export class RoomViewComp extends CCView<Room> {
       Vec3.ZERO,
       new Size(70, 48),
     );
+
+    // 在牌堆下方显示底分
+    const baseBetLbl = this.lbl(
+      "baseBetLabel",
+      this.node,
+      "底分: --",
+      14,
+      new Color(255, 255, 100),
+      new Vec3(TABLE_CENTER.x, TABLE_CENTER.y - 35, 0),
+      new Size(100, 20),
+    );
+    baseBetLbl.node.active = true;
   }
 
   private seats() {
@@ -553,13 +568,36 @@ export class RoomViewComp extends CCView<Room> {
 
   private listen() {
     GameSocket.on("room_state", (d: any) => {
+      // 检查节点是否还有效
+      if (!this.node || !this.node.isValid || !this._titleLbl) return;
       if (d.room_id) this._titleLbl!.string = `斗牛 #${d.room_id}`;
       if (d.players) this.syncPlayers(d.players);
       if (d.status) this.setStatus(d.status);
       if (d.banker_pid) this._bankerPid = d.banker_pid;
+
+      // 更新底分显示
+      console.log("收到 room_state 消息, base_bet:", d.base_bet);
+      if (d.base_bet !== undefined) {
+        const baseBetLbl = this.node
+          .getChildByName("baseBetLabel")
+          ?.getComponent(Label);
+        if (baseBetLbl) {
+          baseBetLbl.string = `底分: ${d.base_bet}`;
+          console.log("已更新底分显示:", baseBetLbl.string);
+        } else {
+          console.error("未找到 baseBetLabel 节点");
+        }
+      } else {
+        console.warn("room_state 消息中没有 base_bet 字段");
+      }
+
       // Phase recovery: if we missed a phase-specific event, sync UI from room_state
       const myData = d.players?.find((p: any) => p.user_pid === this._myPid);
-      if (d.phase === "GrabBanker" && !this._grabBankerArea!.active && !this._bettingArea!.active) {
+      if (
+        d.phase === "GrabBanker" &&
+        !this._grabBankerArea!.active &&
+        !this._bettingArea!.active
+      ) {
         // Only show grab banker UI if I haven't responded yet
         if (myData && myData.wants_banker == null) {
           this.dismissResultPanel();
@@ -571,7 +609,11 @@ export class RoomViewComp extends CCView<Room> {
           this._bettingArea!.active = false;
           this.startCountdown(10);
         }
-      } else if (d.phase === "Betting" && !this._bettingArea!.active && !this._grabBankerArea!.active) {
+      } else if (
+        d.phase === "Betting" &&
+        !this._bettingArea!.active &&
+        !this._grabBankerArea!.active
+      ) {
         // Only show betting UI if I'm not banker and haven't bet yet
         if (myData && !myData.is_banker && myData.bet_amount == null) {
           this._grabBankerArea!.active = false;
@@ -584,15 +626,19 @@ export class RoomViewComp extends CCView<Room> {
       }
     });
     GameSocket.on("player_joined", (d: any) => {
+      if (!this.node || !this.node.isValid) return;
       if (d.players) this.syncPlayers(d.players);
     });
     GameSocket.on("player_left", (d: any) => {
+      if (!this.node || !this.node.isValid) return;
       if (d.players) this.syncPlayers(d.players);
     });
     GameSocket.on("player_ready", (d: any) => {
+      if (!this.node || !this.node.isValid) return;
       if (d.players) this.syncPlayers(d.players);
     });
     GameSocket.on("grab_banker_phase", (d: any) => {
+      if (!this.node || !this.node.isValid) return;
       this.dismissResultPanel();
       this.setStatus("抢庄中");
       this._readyBtn!.active = false;
@@ -606,6 +652,7 @@ export class RoomViewComp extends CCView<Room> {
       this.startCountdown(d.countdown_secs || 10);
     });
     GameSocket.on("banker_selected", (d: any) => {
+      if (!this.node || !this.node.isValid) return;
       this._bankerPid = d.banker_pid || "";
       this._grabBankerArea!.active = false;
       this.stopCountdown();
@@ -625,6 +672,7 @@ export class RoomViewComp extends CCView<Room> {
       }
     });
     GameSocket.on("betting_phase", (d: any) => {
+      if (!this.node || !this.node.isValid) return;
       // 如果选庄动画还在播放，暂存下注数据，等动画结束再显示
       if (this._rouletteRunning) {
         this._pendingBettingData = d;
@@ -633,11 +681,13 @@ export class RoomViewComp extends CCView<Room> {
       this.showBettingPhase(d);
     });
     GameSocket.on("all_bets_placed", (_d: any) => {
+      if (!this.node || !this.node.isValid) return;
       this._bettingArea!.active = false;
       this.stopCountdown();
       this.setStatus("发牌中");
     });
     GameSocket.on("dealing_start", (d: any) => {
+      if (!this.node || !this.node.isValid) return;
       this.clearSeatCards();
       const players: { user_pid: string; seat: number }[] = d.players || [];
       for (const p of players) {
@@ -645,19 +695,23 @@ export class RoomViewComp extends CCView<Room> {
       }
     });
     GameSocket.on("game_started", (d: any) => {
+      if (!this.node || !this.node.isValid) return;
       if (d.target_pid && d.target_pid !== this._myPid) return;
       const hand: CardInfo[] = d.hand || [];
       this.setStatus("游戏中");
       this.dealCards(hand);
     });
     GameSocket.on("reveal_start", (_d: any) => {
+      if (!this.node || !this.node.isValid) return;
       this._isRevealing = true;
       this.setStatus("亮牌中");
     });
     GameSocket.on("reveal_player", (d: any) => {
+      if (!this.node || !this.node.isValid) return;
       this.revealPlayer(d);
     });
     GameSocket.on("game_result", (d: any) => {
+      if (!this.node || !this.node.isValid) return;
       this._isRevealing = false;
       this.showResult(d.players || []);
       this.setStatus("已结束");
@@ -699,6 +753,7 @@ export class RoomViewComp extends CCView<Room> {
       console.error("[Room] error:", d.error || d);
     });
     GameSocket.on("chat_message", (d: any) => {
+      if (!this.node || !this.node.isValid) return;
       this.addChatMsg(d.name || "???", d.text || "");
       this.showBubble(d.user_pid || "", d.text || "");
     });
@@ -823,6 +878,11 @@ export class RoomViewComp extends CCView<Room> {
     this._bullLbl!.string = "";
     const myDispIdx = 3;
     const seatPos = SEAT_POS[myDispIdx];
+
+    // 斗牛规则：左3张凑整数，右2张显示牛数，中间留间隔
+    const leftGroup = 3;
+    const groupGap = 20; // 两组之间的额外间隔
+
     // 复用 dealing_start 阶段已发到位的暗牌，逐张翻转亮牌
     const existingBacks = this._seatCardNodes[myDispIdx];
     if (existingBacks && existingBacks.length >= hand.length) {
@@ -830,6 +890,20 @@ export class RoomViewComp extends CCView<Room> {
         const node = existingBacks[i];
         const c = hand[i];
         this._handCards.push(node);
+
+        // 重新计算位置，按分组显示
+        let tx: number;
+        if (i < leftGroup) {
+          // 左边3张：0, 1, 2
+          tx = MY_CARD_X + i * HAND_GAP;
+        } else {
+          // 右边的牌：3, 4 -> 从第4张位置开始，加上间隔
+          const rightIdx = i - leftGroup; // 0, 1
+          tx =
+            MY_CARD_X + leftGroup * HAND_GAP + groupGap + rightIdx * HAND_GAP;
+        }
+        node.setPosition(tx, MY_CARD_Y, 0);
+
         tween(node)
           .delay(i * 0.2)
           .call(() => this.flip(node, c))
@@ -843,7 +917,18 @@ export class RoomViewComp extends CCView<Room> {
         const node = this.cardBack(i);
         node.parent = this.node;
         this.setLayerRecursive(node, this.node.layer);
-        const tx = MY_CARD_X + i * HAND_GAP;
+
+        // 按分组计算位置
+        let tx: number;
+        if (i < leftGroup) {
+          // 左边3张：0, 1, 2
+          tx = MY_CARD_X + i * HAND_GAP;
+        } else {
+          // 右边的牌：3, 4 -> 从第4张位置开始，加上间隔
+          const rightIdx = i - leftGroup; // 0, 1
+          tx =
+            MY_CARD_X + leftGroup * HAND_GAP + groupGap + rightIdx * HAND_GAP;
+        }
         const ty = MY_CARD_Y;
         node.setPosition(tx, ty, 0);
         node.setScale(1, 1, 1);
@@ -951,11 +1036,25 @@ export class RoomViewComp extends CCView<Room> {
       const role = p.is_banker ? "庄" : `${p.bet_amount || 0}分`;
       const cc = p.coin_change ?? 0;
       const ccStr = cc >= 0 ? `+${cc}` : `${cc}`;
-      const ccColor = cc >= 0 ? new Color(100, 255, 100) : new Color(255, 80, 80);
+      const ccColor =
+        cc >= 0 ? new Color(100, 255, 100) : new Color(255, 80, 80);
       const cardCenterX = this.seatCardCenterX(dispIdx, seatPos, 5);
       rn.setPosition(cardCenterX, seatPos.y - CARD_H / 2 - 18, 0);
-      this.rect(`rsbg${dispIdx}`, rn, new Size(140, 28), new Color(0, 0, 0, 180));
-      this.lbl(`rsbl${dispIdx}`, rn, `[${role}] ${bt} ${ccStr}`, 13, ccColor, Vec3.ZERO, new Size(136, 28));
+      this.rect(
+        `rsbg${dispIdx}`,
+        rn,
+        new Size(140, 28),
+        new Color(0, 0, 0, 180),
+      );
+      this.lbl(
+        `rsbl${dispIdx}`,
+        rn,
+        `[${role}] ${bt} ${ccStr}`,
+        13,
+        ccColor,
+        Vec3.ZERO,
+        new Size(136, 28),
+      );
     }
     // 牌面保留，等下局开始或离开房间时再清理
     // 居中战绩面板
@@ -1368,7 +1467,7 @@ export class RoomViewComp extends CCView<Room> {
   private revealPlayer(d: any) {
     const serverSeat: number = d.seat;
     const dispIdx = this.displayIdx(serverSeat);
-    const hand: CardInfo[] = d.hand || [];
+    const hand: CardInfo[] = d.arranged_hand || d.hand || [];
     const bullType: string = d.bull_type || "None";
     const isBanker: boolean = d.is_banker || false;
     const userPid: string = d.user_pid || "";
@@ -1394,6 +1493,11 @@ export class RoomViewComp extends CCView<Room> {
     if (!seatPos) return;
     const dir = CARD_DIR[dispIdx] || 1;
     const newCards: Node[] = [];
+
+    // 斗牛规则：左3张凑整数，右2张显示牛数，中间留间隔
+    const leftGroup = 3; // 左边3张
+    const groupGap = 15; // 两组之间的额外间隔
+
     for (let i = 0; i < hand.length; i++) {
       const c = hand[i];
       // 深色边框 + 白色牌面，2px边框提供层叠分隔感
@@ -1410,12 +1514,40 @@ export class RoomViewComp extends CCView<Room> {
         new Color(248, 248, 244),
       );
       face.setPosition(0, 0, 0);
-      const tx = dir < 0
-        ? seatPos.x - SEAT_CARD_OFF - (hand.length - 1 - i) * SEAT_CARD_GAP
-        : seatPos.x + SEAT_CARD_OFF + i * SEAT_CARD_GAP;
+
+      // 计算X位置：左3张一组，右2张一组，中间留间隔
+      let tx: number;
+      if (i < leftGroup) {
+        // 左边3张：正常排列
+        tx =
+          dir < 0
+            ? seatPos.x - SEAT_CARD_OFF - (leftGroup - 1 - i) * SEAT_CARD_GAP
+            : seatPos.x + SEAT_CARD_OFF + i * SEAT_CARD_GAP;
+      } else {
+        // 右边的牌：从第4张开始，加上额外间隔
+        const rightIdx = i - leftGroup; // 0, 1, 2...
+        tx =
+          dir < 0
+            ? seatPos.x -
+              SEAT_CARD_OFF -
+              (leftGroup - 1) * SEAT_CARD_GAP -
+              groupGap -
+              (rightIdx + 1) * SEAT_CARD_GAP
+            : seatPos.x +
+              SEAT_CARD_OFF +
+              leftGroup * SEAT_CARD_GAP +
+              groupGap +
+              rightIdx * SEAT_CARD_GAP;
+      }
+
       const ty = seatPos.y;
-      card.setPosition(tx, ty, 0);
+      // 使用 z 坐标控制层级
+      // 右边座位(dir=1)：从左往右排列，后面的牌(索引大)应该在上层，用 i
+      // 左边座位(dir=-1)：从右往左排列，后面的牌(索引大)应该在上层，也用 i
+      const tz = i * 10; // 乘以10确保层级差异明显
+      card.setPosition(tx, ty, tz);
       card.setScale(0, 1, 1);
+
       const suit = SUIT_SYMBOL[c.suit] || c.suit;
       const clr = SUIT_COLOR[c.suit] || new Color(50, 50, 50);
       const rank = RANK_TEXT[c.rank] || c.rank.toString();
@@ -1440,7 +1572,11 @@ export class RoomViewComp extends CCView<Room> {
         new Size(16, 14),
       );
       newCards.push(card);
-      tween(card)
+    }
+
+    // 播放动画
+    for (let i = 0; i < newCards.length; i++) {
+      tween(newCards[i])
         .delay(i * 0.08)
         .to(0.2, { scale: new Vec3(1, 1, 1) }, { easing: "backOut" })
         .start();
@@ -1488,7 +1624,11 @@ export class RoomViewComp extends CCView<Room> {
   }
 
   /** 计算某座位牌面的水平中心 X */
-  private seatCardCenterX(dispIdx: number, seatPos: Vec3, count: number): number {
+  private seatCardCenterX(
+    dispIdx: number,
+    seatPos: Vec3,
+    count: number,
+  ): number {
     const dir = CARD_DIR[dispIdx] || 1;
     const span = (count - 1) * SEAT_CARD_GAP;
     if (dir < 0) {

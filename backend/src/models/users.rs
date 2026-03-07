@@ -243,6 +243,7 @@ impl Model {
             email: ActiveValue::set(params.email.to_string()),
             password: ActiveValue::set(password_hash),
             name: ActiveValue::set(params.name.to_string()),
+            gold: ActiveValue::set(200_000),
             ..Default::default()
         }
         .insert(&txn)

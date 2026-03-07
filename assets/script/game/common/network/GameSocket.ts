@@ -30,10 +30,13 @@ export class GameSocket {
         };
 
         this._ws.onmessage = (ev: MessageEvent) => {
+            console.log("[GameSocket] received message:", ev.data);
             try {
                 const msg = JSON.parse(ev.data);
+                console.log("[GameSocket] parsed message:", msg);
                 const msgType = msg.type as string;
                 const handlers = this._handlers.get(msgType);
+                console.log(`[GameSocket] handlers for ${msgType}:`, handlers?.length || 0);
                 if (handlers) {
                     for (const h of handlers) {
                         h(msg.data || msg);

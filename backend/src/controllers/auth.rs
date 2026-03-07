@@ -57,7 +57,13 @@ async fn register(
                 user_email = &params.email,
                 "could not register user",
             );
-            return format::json(());
+            // 返回具体的错误信息
+            let error_msg = if err.to_string().contains("EntityAlreadyExists") {
+                "该邮箱已被注册"
+            } else {
+                "注册失败，请重试"
+            };
+            return bad_request(error_msg);
         }
     };
 
@@ -260,12 +266,21 @@ async fn profile(auth: auth::JWT, State(ctx): State<AppContext>) -> Result<Respo
     format::json(ProfileResponse::new(&user))
 }
 
+/// Logout endpoint - invalidates the current session
+/// Note: Since we're using stateless JWT, the client must delete the token
+#[debug_handler]
+async fn logout(auth: auth::JWT, State(_ctx): State<AppContext>) -> Result<Response> {
+    tracing::info!(pid = auth.claims.pid, "user logged out");
+    format::json(())
+}
+
 pub fn routes() -> Routes {
     Routes::new()
         .prefix("/api/auth")
         .add("/register", post(register))
         .add("/verify/{token}", get(verify))
         .add("/login", post(login))
+        .add("/logout", post(logout))
         .add("/forgot", post(forgot))
         .add("/reset", post(reset))
         .add("/current", get(current))

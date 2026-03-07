@@ -13,6 +13,12 @@ export class LoginModelComp extends ecs.Comp {
     name: string = "";
     /** 是否已验证邮箱 */
     isVerified: boolean = false;
+    /** 用户金币 */
+    gold: number = 0;
+    /** 用户钻石 */
+    diamonds: number = 0;
+    /** 用户房卡 */
+    cards: number = 0;
 
     reset(): void {
         this.AccountName = null!;
@@ -20,5 +26,8 @@ export class LoginModelComp extends ecs.Comp {
         this.pid = "";
         this.name = "";
         this.isVerified = false;
+        this.gold = 0;
+        this.diamonds = 0;
+        this.cards = 0;
     }
 }

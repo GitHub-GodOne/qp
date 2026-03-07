@@ -10,6 +10,9 @@ export class UserInfoHelper {
      * @param rootNode 包含 userInfo 子节点的页面根节点
      */
     static async updateUserInfo(rootNode: Node): Promise<void> {
+        // 检查节点是否有效
+        if (!rootNode || !rootNode.isValid) return;
+
         const userInfoNode = rootNode.getChildByName("userInfo");
         if (!userInfoNode) return;
 
@@ -28,6 +31,11 @@ export class UserInfoHelper {
             this.setRichText(userInfoNode, "coins", String(profile.gold));
             this.setRichText(userInfoNode, "gems", String(profile.diamonds));
             this.setRichText(userInfoNode, "card", String(profile.cards));
+
+            // 同步更新 LoginModel 中的资产数据
+            model.gold = profile.gold;
+            model.diamonds = profile.diamonds;
+            model.cards = profile.cards;
         } catch (e) {
             console.error("获取用户资产失败:", e);
         }

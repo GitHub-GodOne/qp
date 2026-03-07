@@ -14,7 +14,7 @@ use std::time::Duration;
 
 use crate::game::{
     bull_bull,
-    deck::Deck,
+    deck::{Card, Deck},
     room::{GamePhase, RoomStatus, ROOM_MANAGER},
 };
 
@@ -138,6 +138,7 @@ fn room_state_msg(room_id: &str) -> Option<String> {
                 "status": room.status,
                 "phase": room.phase,
                 "banker_pid": room.banker_pid,
+                "base_bet": room.base_bet,
                 "players": players,
             }),
         )
@@ -166,6 +167,10 @@ async fn handle_socket(
 
     // Auto join on connect
     let join_result = ROOM_MANAGER.with_room(&room_id, |room| {
+        // 自定义房间不检查金币限制，系统房间需要检查
+        if !room.is_custom && !room.room_type.can_enter(user_gold) {
+            return Err("金币不足或超出房间要求");
+        }
         room.add_player(&user_pid, &user_name, user_gold)
     });
     match join_result {
@@ -236,7 +241,11 @@ async fn handle_socket(
     // Cleanup: remove player on disconnect
     let phase_info = ROOM_MANAGER.with_room(&room_id, |room| {
         room.remove_player(&user_pid);
-        (room.phase, room.all_banker_responded(), room.all_bets_placed())
+        (
+            room.phase,
+            room.all_banker_responded(),
+            room.all_bets_placed(),
+        )
     });
     if let Some(msg) = room_state_msg(&room_id) {
         ROOM_MANAGER.broadcast(&room_id, &msg);
@@ -245,7 +254,9 @@ async fn handle_socket(
     if let Some((phase, all_grab, all_bets)) = phase_info {
         if phase == GamePhase::GrabBanker && all_grab {
             ROOM_MANAGER.with_room(&room_id, |room| {
-                if let Some(h) = room.timeout_handle.take() { h.abort(); }
+                if let Some(h) = room.timeout_handle.take() {
+                    h.abort();
+                }
             });
             select_banker(&room_id);
             if let Some(state) = room_state_msg(&room_id) {
@@ -254,7 +265,9 @@ async fn handle_socket(
             enter_betting(&room_id, &db_for_cleanup);
         } else if phase == GamePhase::Betting && all_bets {
             ROOM_MANAGER.with_room(&room_id, |room| {
-                if let Some(h) = room.timeout_handle.take() { h.abort(); }
+                if let Some(h) = room.timeout_handle.take() {
+                    h.abort();
+                }
             });
             let rid = room_id.clone();
             let db2 = db_for_cleanup.clone();
@@ -269,7 +282,11 @@ fn handle_client_msg(msg: &ClientMsg, user_pid: &str, room_id: &str, db: &Databa
         "leave_room" => {
             let phase_info = ROOM_MANAGER.with_room(room_id, |room| {
                 room.remove_player(user_pid);
-                (room.phase, room.all_banker_responded(), room.all_bets_placed())
+                (
+                    room.phase,
+                    room.all_banker_responded(),
+                    room.all_bets_placed(),
+                )
             });
             let notify = ServerMsg::event("player_left", json!({ "user_pid": user_pid }));
             ROOM_MANAGER.broadcast(room_id, &notify);
@@ -280,7 +297,9 @@ fn handle_client_msg(msg: &ClientMsg, user_pid: &str, room_id: &str, db: &Databa
             if let Some((phase, all_grab, all_bets)) = phase_info {
                 if phase == GamePhase::GrabBanker && all_grab {
                     ROOM_MANAGER.with_room(room_id, |room| {
-                        if let Some(h) = room.timeout_handle.take() { h.abort(); }
+                        if let Some(h) = room.timeout_handle.take() {
+                            h.abort();
+                        }
                     });
                     select_banker(room_id);
                     if let Some(state) = room_state_msg(room_id) {
@@ -289,7 +308,9 @@ fn handle_client_msg(msg: &ClientMsg, user_pid: &str, room_id: &str, db: &Databa
                     enter_betting(room_id, db);
                 } else if phase == GamePhase::Betting && all_bets {
                     ROOM_MANAGER.with_room(room_id, |room| {
-                        if let Some(h) = room.timeout_handle.take() { h.abort(); }
+                        if let Some(h) = room.timeout_handle.take() {
+                            h.abort();
+                        }
                     });
                     let rid = room_id.to_string();
                     let db2 = db.clone();
@@ -301,24 +322,51 @@ fn handle_client_msg(msg: &ClientMsg, user_pid: &str, room_id: &str, db: &Databa
         }
         "ready" => {
             let ready = msg.ready.unwrap_or(true);
-            // 金币不足300，不允许准备，踢出房间
+            // 检查金币是否满足房间要求（仅对系统房间检查）
             if ready {
-                let coins = ROOM_MANAGER
+                let check_result = ROOM_MANAGER
                     .with_room(room_id, |room| {
-                        room.players
+                        let player = room.players
                             .iter()
-                            .find(|p| p.user_pid == user_pid)
-                            .map(|p| p.coins)
+                            .find(|p| p.user_pid == user_pid)?;
+                        Some((player.coins, room.room_type, room.is_custom))
                     })
                     .flatten();
-                if let Some(c) = coins {
-                    if c < 300 {
+                if let Some((coins, room_type, is_custom)) = check_result {
+                    // 自定义房间只要金币大于0即可，系统房间需要检查范围
+                    let should_kick = if is_custom {
+                        coins == 0
+                    } else {
+                        !room_type.can_enter(coins)
+                    };
+
+                    if should_kick {
                         ROOM_MANAGER.with_room(room_id, |room| {
                             room.remove_player(user_pid);
                         });
+                        let reason = if is_custom {
+                            "金币不足，无法继续游戏".to_string()
+                        } else {
+                            let min = room_type.min_coins();
+                            let max = room_type.max_coins();
+                            if let Some(max_coins) = max {
+                                format!(
+                                    "金币不在范围内，{}需要{}-{}金币",
+                                    room_type.display_name(),
+                                    min,
+                                    max_coins
+                                )
+                            } else {
+                                format!(
+                                    "金币不足{}，无法在{}继续游戏",
+                                    min,
+                                    room_type.display_name()
+                                )
+                            }
+                        };
                         let kick_msg = ServerMsg::event(
                             "kicked",
-                            json!({ "target_pid": user_pid, "reason": "金币不足300，无法继续游戏" }),
+                            json!({ "target_pid": user_pid, "reason": reason }),
                         );
                         ROOM_MANAGER.broadcast(room_id, &kick_msg);
                         if let Some(state) = room_state_msg(room_id) {
@@ -650,7 +698,7 @@ async fn deal_and_settle_async(room_id: &str, db: &DatabaseConnection) {
         }
     }
 
-    // Step 3: Send each player their own hand
+    // Step 3: Send each player their own hand (original order, not arranged)
     for (pid, hand) in &hands {
         let targeted = ServerMsg::event(
             "game_started",
@@ -679,10 +727,26 @@ async fn deal_and_settle_async(room_id: &str, db: &DatabaseConnection) {
                 .players
                 .iter()
                 .map(|p| {
+                    // Arrange hand to show bull combination (left 3 cards sum to 10x, right 2 cards)
+                    let arranged_hand = if let Some(ref hand) = p.hand {
+                        if hand.len() == 5 {
+                            let hand_array: [Card; 5] = [
+                                hand[0], hand[1], hand[2], hand[3], hand[4],
+                            ];
+                            let arranged = bull_bull::arrange_hand(&hand_array);
+                            Some(arranged.to_vec())
+                        } else {
+                            p.hand.clone()
+                        }
+                    } else {
+                        None
+                    };
+
                     json!({
                         "user_pid": p.user_pid,
                         "seat": p.seat,
                         "hand": p.hand,
+                        "arranged_hand": arranged_hand,
                         "bull_type": p.bull_type,
                         "is_banker": p.is_banker,
                     })
@@ -710,6 +774,9 @@ async fn deal_and_settle_async(room_id: &str, db: &DatabaseConnection) {
             .bull_type
             .unwrap_or(bull_bull::BullType::None);
 
+        // Use room's base_bet instead of hardcoded 3000
+        let base_bet = room.base_bet;
+
         // Collect non-banker settlement info
         let settlements: Vec<(usize, i32)> = room
             .players
@@ -724,7 +791,7 @@ async fn deal_and_settle_async(room_id: &str, db: &DatabaseConnection) {
                 } else {
                     (player_bull.multiplier() as i32, false)
                 };
-                let raw_amount = 3000 * bet * winner_mult;
+                let raw_amount = base_bet as i32 * bet * winner_mult;
                 if banker_wins {
                     // Player loses, banker gains
                     let actual = raw_amount.min(p.coins as i32);

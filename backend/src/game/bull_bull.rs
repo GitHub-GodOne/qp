@@ -112,6 +112,41 @@ pub fn evaluate(hand: &[Card; 5]) -> BullType {
     BullType::None
 }
 
+/// Arrange hand to show bull combination: [3 cards that sum to 10x, 2 remaining cards]
+/// Returns the arranged hand with the 3-card group first, then the 2-card group.
+#[must_use]
+pub fn arrange_hand(hand: &[Card; 5]) -> [Card; 5] {
+    let vals: Vec<u8> = hand.iter().map(|c| c.bull_value()).collect();
+
+    // Try to find 3 cards that sum to multiple of 10
+    for i in 0..3 {
+        for j in (i + 1)..4 {
+            for k in (j + 1)..5 {
+                let three_sum = u32::from(vals[i]) + u32::from(vals[j]) + u32::from(vals[k]);
+                if three_sum % 10 == 0 {
+                    // Found the combination! Arrange as [i, j, k, remaining...]
+                    let mut result = [hand[0]; 5];
+                    result[0] = hand[i];
+                    result[1] = hand[j];
+                    result[2] = hand[k];
+
+                    let mut remaining_idx = 3;
+                    for (idx, &card) in hand.iter().enumerate() {
+                        if idx != i && idx != j && idx != k {
+                            result[remaining_idx] = card;
+                            remaining_idx += 1;
+                        }
+                    }
+                    return result;
+                }
+            }
+        }
+    }
+
+    // No bull combination found, return original order
+    *hand
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

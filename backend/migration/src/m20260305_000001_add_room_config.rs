@@ -1,0 +1,50 @@
+use loco_rs::schema::*;
+use sea_orm_migration::prelude::*;
+
+#[derive(DeriveMigrationName)]
+pub struct Migration;
+
+#[async_trait::async_trait]
+impl MigrationTrait for Migration {
+    async fn up(&self, m: &SchemaManager) -> Result<(), DbErr> {
+        m.alter_table(
+            Table::alter()
+                .table(Alias::new("rooms"))
+                .add_column(ColumnDef::new(Alias::new("payment_type")).string().default("AA"))
+                .add_column(ColumnDef::new(Alias::new("rounds")).small_integer().default(10))
+                .add_column(ColumnDef::new(Alias::new("banker_type")).string().default("OpenCard"))
+                .add_column(ColumnDef::new(Alias::new("max_banker_multi")).tiny_integer().default(1))
+                .add_column(ColumnDef::new(Alias::new("idle_push_multi")).tiny_integer().default(0))
+                .add_column(ColumnDef::new(Alias::new("base_score_numerator")).tiny_integer().default(1))
+                .add_column(ColumnDef::new(Alias::new("base_score_denominator")).tiny_integer().default(2))
+                .add_column(ColumnDef::new(Alias::new("multiply_rule")).string().default("Classic"))
+                .add_column(ColumnDef::new(Alias::new("special_cards")).json().null())
+                .add_column(ColumnDef::new(Alias::new("joker_rule")).string().default("None"))
+                .add_column(ColumnDef::new(Alias::new("flower_rule")).string().default("WithFlower"))
+                .to_owned(),
+        )
+        .await?;
+        Ok(())
+    }
+
+    async fn down(&self, m: &SchemaManager) -> Result<(), DbErr> {
+        m.alter_table(
+            Table::alter()
+                .table(Alias::new("rooms"))
+                .drop_column(Alias::new("payment_type"))
+                .drop_column(Alias::new("rounds"))
+                .drop_column(Alias::new("banker_type"))
+                .drop_column(Alias::new("max_banker_multi"))
+                .drop_column(Alias::new("idle_push_multi"))
+                .drop_column(Alias::new("base_score_numerator"))
+                .drop_column(Alias::new("base_score_denominator"))
+                .drop_column(Alias::new("multiply_rule"))
+                .drop_column(Alias::new("special_cards"))
+                .drop_column(Alias::new("joker_rule"))
+                .drop_column(Alias::new("flower_rule"))
+                .to_owned(),
+        )
+        .await?;
+        Ok(())
+    }
+}

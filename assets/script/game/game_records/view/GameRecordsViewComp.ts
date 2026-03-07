@@ -1,5 +1,5 @@
 import { _decorator, Node, Label, UITransform, Size, Color, Vec3, Sprite, Button, EventHandler,
-    HorizontalTextAlignment, VerticalTextAlignment, builtinResMgr, SpriteFrame, Texture2D, ScrollView, Widget, Mask } from "cc";
+    HorizontalTextAlignment, VerticalTextAlignment, builtinResMgr, SpriteFrame, Texture2D, ScrollView, Widget, Mask, BlockInputEvents } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
@@ -72,6 +72,8 @@ export class GameRecordsViewComp extends CCView<GameRecords> {
         const bw = bg.addComponent(Widget);
         bw.isAlignTop = bw.isAlignBottom = bw.isAlignLeft = bw.isAlignRight = true;
         bw.top = bw.bottom = bw.left = bw.right = 0;
+        // 添加 BlockInputEvents 组件阻止点击穿透到下层
+        bg.addComponent(BlockInputEvents);
 
         // Dialog panel
         const panel = this.rect("panel", this.node, new Size(700, 500), new Color(30, 45, 30, 240));

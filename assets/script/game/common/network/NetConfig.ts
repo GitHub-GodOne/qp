@@ -8,10 +8,12 @@ export const NetConfig = {
     API: {
         LOGIN: "/api/auth/login",
         REGISTER: "/api/auth/register",
+        LOGOUT: "/api/auth/logout",
         CURRENT_USER: "/api/auth/current",
         PROFILE: "/api/auth/profile",
         ROOMS: "/api/rooms",
         QUICK_JOIN: "/api/rooms/quick-join",
+        JOIN_BY_PASSWORD: "/api/rooms/join-by-password",
         WS: "/api/ws",
         GAME_RECORDS: "/api/game-records",
     },

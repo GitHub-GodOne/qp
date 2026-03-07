@@ -16,6 +16,12 @@ export class HttpClient {
         sys.localStorage.setItem(TOKEN_KEY, val);
     }
 
+    /** 清除token */
+    static clearToken(): void {
+        this._token = "";
+        sys.localStorage.removeItem(TOKEN_KEY);
+    }
+
     static get<T = any>(path: string): Promise<T> {
         return this.request("GET", path);
     }
@@ -46,6 +52,17 @@ export class HttpClient {
                     } catch {
                         resolve(null as any);
                     }
+                } else if (xhr.status === 401) {
+                    // 401 未授权，清除 token 并重新加载场景返回登录页
+                    this.clearToken();
+                    console.warn("Token 已失效，返回登录页面");
+                    // 延迟一下再重新加载，让用户看到提示
+                    import("cc").then(({ director }) => {
+                        setTimeout(() => {
+                            director.loadScene(director.getScene()!.name);
+                        }, 500);
+                    });
+                    reject(new Error(`HTTP ${xhr.status}: ${xhr.responseText}`));
                 } else {
                     reject(new Error(`HTTP ${xhr.status}: ${xhr.responseText}`));
                 }

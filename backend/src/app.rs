@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use axum::routing::get;
 use loco_rs::{
     app::{AppContext, Hooks, Initializer},
     bgworker::{BackgroundWorker, Queue},
@@ -56,6 +57,11 @@ impl Hooks for App {
             .add_route(controllers::rooms::routes())
             .add_route(controllers::ws::routes())
             .add_route(controllers::game_records::routes())
+            // 静态文件服务 - 必须放在最后，作为 fallback
+            .add_route(
+                loco_rs::controller::Routes::new()
+                    .add("/{*path}", get(crate::static_files::serve_static))
+            )
     }
 
     async fn connect_workers(ctx: &AppContext, queue: &Queue) -> Result<()> {

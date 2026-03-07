@@ -2,4 +2,5 @@
 
 pub use super::game_records::Entity as GameRecords;
 pub use super::rooms::Entity as Rooms;
+pub use super::system_config::Entity as SystemConfig;
 pub use super::users::Entity as Users;

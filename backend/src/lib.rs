@@ -5,6 +5,7 @@ pub mod game;
 pub mod initializers;
 pub mod mailers;
 pub mod models;
+pub mod static_files;
 pub mod tasks;
 pub mod views;
 pub mod workers;

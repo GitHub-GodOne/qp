@@ -326,9 +326,7 @@ fn handle_client_msg(msg: &ClientMsg, user_pid: &str, room_id: &str, db: &Databa
             if ready {
                 let check_result = ROOM_MANAGER
                     .with_room(room_id, |room| {
-                        let player = room.players
-                            .iter()
-                            .find(|p| p.user_pid == user_pid)?;
+                        let player = room.players.iter().find(|p| p.user_pid == user_pid)?;
                         Some((player.coins, room.room_type, room.is_custom))
                     })
                     .flatten();
@@ -730,9 +728,8 @@ async fn deal_and_settle_async(room_id: &str, db: &DatabaseConnection) {
                     // Arrange hand to show bull combination (left 3 cards sum to 10x, right 2 cards)
                     let arranged_hand = if let Some(ref hand) = p.hand {
                         if hand.len() == 5 {
-                            let hand_array: [Card; 5] = [
-                                hand[0], hand[1], hand[2], hand[3], hand[4],
-                            ];
+                            let hand_array: [Card; 5] =
+                                [hand[0], hand[1], hand[2], hand[3], hand[4]];
                             let arranged = bull_bull::arrange_hand(&hand_array);
                             Some(arranged.to_vec())
                         } else {

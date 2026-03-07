@@ -1,7 +1,9 @@
 use crate::{
     game::room::ROOM_MANAGER,
+    game::room_config::{
+        BankerType, FlowerRule, JokerRule, MultiplyRule, PaymentType, RoomConfig, SpecialCard,
+    },
     game::room_type::RoomType,
-    game::room_config::{RoomConfig, PaymentType, BankerType, MultiplyRule, SpecialCard, JokerRule, FlowerRule},
     models::{_entities::users, rooms, users::Model as UserModel},
     views::rooms::{RoomListResponse, RoomResponse},
 };
@@ -89,16 +91,19 @@ async fn create(
     };
 
     let special_cards = params.special_cards.as_ref().map_or(vec![], |cards| {
-        cards.iter().filter_map(|s| match s.as_str() {
-            "StraightFlush" => Some(SpecialCard::StraightFlush),
-            "Bomb" => Some(SpecialCard::Bomb),
-            "FiveSmall" => Some(SpecialCard::FiveSmall),
-            "FullHouse" => Some(SpecialCard::FullHouse),
-            "Flush" => Some(SpecialCard::Flush),
-            "FiveFace" => Some(SpecialCard::FiveFace),
-            "Straight" => Some(SpecialCard::Straight),
-            _ => None,
-        }).collect()
+        cards
+            .iter()
+            .filter_map(|s| match s.as_str() {
+                "StraightFlush" => Some(SpecialCard::StraightFlush),
+                "Bomb" => Some(SpecialCard::Bomb),
+                "FiveSmall" => Some(SpecialCard::FiveSmall),
+                "FullHouse" => Some(SpecialCard::FullHouse),
+                "Flush" => Some(SpecialCard::Flush),
+                "FiveFace" => Some(SpecialCard::FiveFace),
+                "Straight" => Some(SpecialCard::Straight),
+                _ => None,
+            })
+            .collect()
     });
 
     let joker_rule = match params.joker_rule.as_deref() {
@@ -150,11 +155,25 @@ async fn create(
         .map_err(|e| Error::string(&e.to_string()))?;
 
     let max_players = config.max_players as i16;
-    let room = rooms::Model::create(&ctx.db, owner_pid, &params.name, max_players, params.room_password).await?;
+    let room = rooms::Model::create(
+        &ctx.db,
+        owner_pid,
+        &params.name,
+        max_players,
+        params.room_password,
+    )
+    .await?;
 
     // 同时在内存中创建 GameRoom，供 WebSocket 使用
     // 自定义房间不检查金币限制
-    ROOM_MANAGER.create_room(&room.room_id, &auth.claims.pid, max_players as usize, room_type, config, true);
+    ROOM_MANAGER.create_room(
+        &room.room_id,
+        &auth.claims.pid,
+        max_players as usize,
+        room_type,
+        config,
+        true,
+    );
 
     format::json(RoomResponse::new(&room))
 }
@@ -188,7 +207,7 @@ pub struct JoinByPasswordParams {
 
 #[debug_handler]
 async fn join_by_password(
-    auth: auth::JWT,
+    _auth: auth::JWT,
     State(ctx): State<AppContext>,
     Json(params): Json<JoinByPasswordParams>,
 ) -> Result<Response> {
@@ -198,9 +217,10 @@ async fn join_by_password(
     }
 
     // 查找房间
-    let room = rooms::Model::find_by_password(&ctx.db, &params.password)
-        .await
-        .map_err(|_| Error::string("房间不存在或已关闭"))?;
+    let room = match rooms::Model::find_by_password(&ctx.db, &params.password).await {
+        Ok(room) => room,
+        Err(_) => return bad_request("房间不存在或已关闭"),
+    };
 
     // 检查房间是否在内存中（是否还在运行）
     if !ROOM_MANAGER.room_exists(&room.room_id) {
@@ -240,11 +260,7 @@ async fn quick_join(
                 max_coins
             )
         } else {
-            format!(
-                "金币不足，{}需要{}金币以上",
-                room_type.display_name(),
-                min
-            )
+            format!("金币不足，{}需要{}金币以上", room_type.display_name(), min)
         };
         return bad_request(&msg);
     }

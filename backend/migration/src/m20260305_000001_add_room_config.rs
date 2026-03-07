@@ -1,4 +1,3 @@
-use loco_rs::schema::*;
 use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
@@ -10,17 +9,57 @@ impl MigrationTrait for Migration {
         m.alter_table(
             Table::alter()
                 .table(Alias::new("rooms"))
-                .add_column(ColumnDef::new(Alias::new("payment_type")).string().default("AA"))
-                .add_column(ColumnDef::new(Alias::new("rounds")).small_integer().default(10))
-                .add_column(ColumnDef::new(Alias::new("banker_type")).string().default("OpenCard"))
-                .add_column(ColumnDef::new(Alias::new("max_banker_multi")).tiny_integer().default(1))
-                .add_column(ColumnDef::new(Alias::new("idle_push_multi")).tiny_integer().default(0))
-                .add_column(ColumnDef::new(Alias::new("base_score_numerator")).tiny_integer().default(1))
-                .add_column(ColumnDef::new(Alias::new("base_score_denominator")).tiny_integer().default(2))
-                .add_column(ColumnDef::new(Alias::new("multiply_rule")).string().default("Classic"))
+                .add_column(
+                    ColumnDef::new(Alias::new("payment_type"))
+                        .string()
+                        .default("AA"),
+                )
+                .add_column(
+                    ColumnDef::new(Alias::new("rounds"))
+                        .small_integer()
+                        .default(10),
+                )
+                .add_column(
+                    ColumnDef::new(Alias::new("banker_type"))
+                        .string()
+                        .default("OpenCard"),
+                )
+                .add_column(
+                    ColumnDef::new(Alias::new("max_banker_multi"))
+                        .tiny_integer()
+                        .default(1),
+                )
+                .add_column(
+                    ColumnDef::new(Alias::new("idle_push_multi"))
+                        .tiny_integer()
+                        .default(0),
+                )
+                .add_column(
+                    ColumnDef::new(Alias::new("base_score_numerator"))
+                        .tiny_integer()
+                        .default(1),
+                )
+                .add_column(
+                    ColumnDef::new(Alias::new("base_score_denominator"))
+                        .tiny_integer()
+                        .default(2),
+                )
+                .add_column(
+                    ColumnDef::new(Alias::new("multiply_rule"))
+                        .string()
+                        .default("Classic"),
+                )
                 .add_column(ColumnDef::new(Alias::new("special_cards")).json().null())
-                .add_column(ColumnDef::new(Alias::new("joker_rule")).string().default("None"))
-                .add_column(ColumnDef::new(Alias::new("flower_rule")).string().default("WithFlower"))
+                .add_column(
+                    ColumnDef::new(Alias::new("joker_rule"))
+                        .string()
+                        .default("None"),
+                )
+                .add_column(
+                    ColumnDef::new(Alias::new("flower_rule"))
+                        .string()
+                        .default("WithFlower"),
+                )
                 .to_owned(),
         )
         .await?;

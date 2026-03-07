@@ -41,6 +41,7 @@ futures-util = { version = "0.3" }
 dashmap = { version = "6" }
 rand = { version = "0.8" }
 tower-http = { version = "0.6", features = ["cors"] }
+mime_guess = { version = "2.0" }
 
 [[bin]]
 name = "backend-cli"

@@ -380,6 +380,7 @@ dependencies = [
  "insta",
  "loco-rs",
  "migration",
+ "mime_guess",
  "rand 0.8.5",
  "regex",
  "rstest",

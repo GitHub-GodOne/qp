@@ -6,8 +6,8 @@ use tokio::sync::broadcast;
 
 use super::bull_bull::BullType;
 use super::deck::Card;
-use super::room_type::RoomType;
 use super::room_config::RoomConfig;
+use super::room_type::RoomType;
 
 pub static ROOM_MANAGER: LazyLock<RoomManager> = LazyLock::new(RoomManager::new);
 
@@ -71,20 +71,29 @@ pub struct GameRoom {
 }
 
 impl GameRoom {
-    fn new(room_id: String, owner_pid: String, max_players: usize, room_type: RoomType, config: RoomConfig, is_custom: bool) -> Self {
+    fn new(
+        room_id: String,
+        owner_pid: String,
+        max_players: usize,
+        room_type: RoomType,
+        config: RoomConfig,
+        is_custom: bool,
+    ) -> Self {
         let (tx, _) = broadcast::channel(BROADCAST_CAPACITY);
-        // 使用用户配置的底分，而不是房间类型的默认底分
-        // base_bet = (base_score_numerator / base_score_denominator) * 房间类型基础倍数
-        let room_base = room_type.base_bet();
-        let base_bet = (room_base * config.base_score_numerator as u32) / config.base_score_denominator as u32;
+        // 系统房间使用固定底分，自定义房间使用配置计算底分
+        let base_bet = if is_custom {
+            // 自定义房间：base_bet = (base_score_numerator / base_score_denominator) * 房间类型基础倍数
+            let room_base = room_type.base_bet();
+            (room_base * config.base_score_numerator as u32) / config.base_score_denominator as u32
+        } else {
+            // 系统房间：直接使用房间类型的固定底分
+            room_type.base_bet()
+        };
 
         tracing::info!(
-            "创建 GameRoom: room_id={}, room_type={:?}, room_base={}, base_score={}/{}, calculated_base_bet={}, is_custom={}",
+            "创建 GameRoom: room_id={}, room_type={:?}, base_bet={}, is_custom={}",
             room_id,
             room_type,
-            room_base,
-            config.base_score_numerator,
-            config.base_score_denominator,
             base_bet,
             is_custom
         );
@@ -245,7 +254,14 @@ impl RoomManager {
         config: RoomConfig,
         is_custom: bool,
     ) -> broadcast::Receiver<String> {
-        let room = GameRoom::new(room_id.to_string(), owner_pid.to_string(), max_players, room_type, config, is_custom);
+        let room = GameRoom::new(
+            room_id.to_string(),
+            owner_pid.to_string(),
+            max_players,
+            room_type,
+            config,
+            is_custom,
+        );
         let rx = room.tx.subscribe();
         self.rooms.insert(room_id.to_string(), room);
         rx
@@ -282,7 +298,8 @@ impl RoomManager {
             let room = entry.value();
             if room.room_type == room_type
                 && room.status == RoomStatus::Waiting
-                && room.players.len() < room.max_players {
+                && room.players.len() < room.max_players
+            {
                 let ready_count = room.players.iter().filter(|p| p.is_ready).count();
                 if best
                     .as_ref()

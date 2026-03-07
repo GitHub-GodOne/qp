@@ -237,13 +237,20 @@ impl Model {
             return Err(ModelError::EntityAlreadyExists {});
         }
 
+        // 从配置表读取新用户初始资源
+        let (gold, diamonds, cards) = super::system_config::Model::get_new_user_resources(&txn)
+            .await
+            .unwrap_or((10_000, 100, 5)); // 如果读取失败，使用默认值
+
         let password_hash =
             hash::hash_password(&params.password).map_err(|e| ModelError::Any(e.into()))?;
         let user = users::ActiveModel {
             email: ActiveValue::set(params.email.to_string()),
             password: ActiveValue::set(password_hash),
             name: ActiveValue::set(params.name.to_string()),
-            gold: ActiveValue::set(200_000),
+            gold: ActiveValue::set(gold),
+            diamonds: ActiveValue::set(diamonds),
+            cards: ActiveValue::set(cards),
             ..Default::default()
         }
         .insert(&txn)

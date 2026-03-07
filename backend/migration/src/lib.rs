@@ -7,6 +7,7 @@ mod m20240101_000003_add_wallet_to_users;
 mod m20240201_000004_game_records;
 mod m20260305_000001_add_room_config;
 mod m20260306_000002_add_room_password;
+mod m20260307_000003_create_system_config;
 
 pub struct Migrator;
 
@@ -20,6 +21,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20240201_000004_game_records::Migration),
             Box::new(m20260305_000001_add_room_config::Migration),
             Box::new(m20260306_000002_add_room_password::Migration),
+            Box::new(m20260307_000003_create_system_config::Migration),
             // inject-above (do not remove this comment)
         ]
     }

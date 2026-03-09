@@ -160,7 +160,8 @@ impl GameRoom {
         // If player already exists, mark them as online and return their seat
         if let Some(existing) = self.players.iter_mut().find(|p| p.user_pid == user_pid) {
             existing.is_offline = false;
-            existing.coins = coins; // Update coins in case they changed
+            // 不要覆盖房间内存中的金币！房间内存中的金币是最新的（包含游戏结算后的金币）
+            // existing.coins = coins; // 删除这行，保留房间内存中的金币
             return Ok(existing.seat);
         }
         let seat = target_seat.unwrap_or_else(|| self.next_seat());

@@ -8,7 +8,7 @@ export const NetConfig = {
     "ws",
   ),
   // API_BASE: "http://192.168.2.37:5150",
-  /** WebSocket 地址 */
+  // /** WebSocket 地址 */
   // WS_BASE: "http://192.168.2.37:5150".replace(/^http/, "ws"),
   /** API 路径 */
   API: {

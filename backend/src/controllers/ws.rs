@@ -187,6 +187,15 @@ async fn handle_socket(
             if let Some(state) = room_state_msg(&room_id) {
                 let _ = ws_tx.send(Message::Text(state.into())).await;
             }
+
+            // 如果房间在等待阶段，启动/重置30秒准备倒计时
+            let should_start_timeout = ROOM_MANAGER.with_room(&room_id, |room| {
+                room.phase == GamePhase::Waiting
+            });
+            if should_start_timeout == Some(true) {
+                tracing::info!("Player {} joined room {}, starting/resetting 30s ready timeout", user_pid, room_id);
+                start_ready_timeout(&room_id, &db);
+            }
         }
         Some(Err(e)) => {
             let _ = ws_tx.send(Message::Text(ServerMsg::error(e).into())).await;
@@ -605,6 +614,11 @@ fn enter_grab_banker(room_id: &str, db: &DatabaseConnection) {
     let transitioned = ROOM_MANAGER.with_room(room_id, |room| {
         if room.phase != GamePhase::Waiting {
             return false;
+        }
+        // 清除准备超时定时器（如果存在）
+        if let Some(h) = room.timeout_handle.take() {
+            h.abort();
+            tracing::info!("Cleared ready timeout for room {} as game is starting", room.room_id);
         }
         room.status = RoomStatus::Playing;
         room.phase = GamePhase::GrabBanker;
@@ -1052,6 +1066,80 @@ async fn deal_and_settle_async(room_id: &str, db: &DatabaseConnection) {
     if let Some(state) = room_state_msg(room_id) {
         ROOM_MANAGER.broadcast(room_id, &state);
     }
+
+    // 启动30秒准备倒计时，未准备的玩家将被踢出
+    tracing::info!("Game finished in room {}, starting 30s ready timeout", room_id);
+    start_ready_timeout(room_id, db);
+}
+
+/// 启动准备超时定时器
+fn start_ready_timeout(room_id: &str, db: &DatabaseConnection) {
+    let rid = room_id.to_string();
+    let db_clone = db.clone();
+
+    // 先取消旧的定时器
+    ROOM_MANAGER.with_room(room_id, |room| {
+        if let Some(old_handle) = room.timeout_handle.take() {
+            old_handle.abort();
+            tracing::info!("Aborted previous ready timeout for room {}", room_id);
+        }
+    });
+
+    let handle = tokio::spawn(async move {
+        tokio::time::sleep(Duration::from_secs(30)).await;
+
+        // 检查并踢出未准备的玩家
+        let kicked_players = ROOM_MANAGER.with_room(&rid, |room| {
+            // 重要：检查房间是否还在等待阶段
+            if room.phase != GamePhase::Waiting {
+                tracing::info!("Room {} is no longer in Waiting phase, skipping kick", rid);
+                return Vec::new();
+            }
+
+            let mut kicked = Vec::new();
+            // 收集未准备的玩家（不包括AI）
+            for player in &room.players {
+                if !player.is_ready && !player.is_ai {
+                    kicked.push((player.user_pid.clone(), player.name.clone()));
+                }
+            }
+
+            // 移除未准备的玩家
+            room.players.retain(|p| p.is_ready || p.is_ai);
+
+            kicked
+        });
+
+        if let Some(kicked_list) = kicked_players {
+            if !kicked_list.is_empty() {
+                tracing::info!("Kicking {} players for not ready in 30s", kicked_list.len());
+
+                // 广播踢出消息
+                for (pid, name) in &kicked_list {
+                    let kick_msg = ServerMsg::event(
+                        "kicked",
+                        json!({
+                            "target_pid": pid,
+                            "reason": "30秒内未准备，已被移出房间"
+                        }),
+                    );
+                    ROOM_MANAGER.broadcast(&rid, &kick_msg);
+                    tracing::info!("Kicked player {} ({}) for not ready in 30s", name, pid);
+                }
+
+                // 广播更新后的房间状态
+                if let Some(state) = room_state_msg(&rid) {
+                    ROOM_MANAGER.broadcast(&rid, &state);
+                }
+            }
+        }
+    });
+
+    // 保存定时器句柄到房间
+    ROOM_MANAGER.with_room(room_id, |room| {
+        room.timeout_handle = Some(handle);
+        tracing::info!("Started new 30s ready timeout for room {}", room_id);
+    });
 }
 
 pub fn routes() -> Routes {

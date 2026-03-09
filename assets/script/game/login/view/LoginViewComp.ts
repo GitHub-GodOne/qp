@@ -25,6 +25,7 @@ import { smc } from "../../common/SingletonModuleComp";
 import { HallViewComp } from "../../hall/view/HallViewComp";
 import { HttpClient } from "../../common/network/HttpClient";
 import { NetConfig } from "../../common/network/NetConfig";
+import { audioSettings } from "../../common/AudioSettings";
 
 const { ccclass, property } = _decorator;
 
@@ -67,6 +68,8 @@ export class LoginViewComp extends CCView<Login> {
       model.diamonds = profile.diamonds;
       model.cards = profile.cards;
       console.log("自动登录成功:", profile.name);
+      // 加载音频设置
+      await audioSettings.load();
       await smc.login.addUi(HallViewComp);
       this.remove();
     } catch (e) {
@@ -133,7 +136,7 @@ export class LoginViewComp extends CCView<Login> {
   private createInputFields() {
     this.emailInput = this.createEditBox(
       "emailInput",
-      "请输入邮箱",
+      "请输入账号",
       false,
       150,
     );
@@ -293,7 +296,7 @@ export class LoginViewComp extends CCView<Login> {
     const email = this.emailInput?.string || "";
     const password = this.passwordInput?.string || "";
     if (!email || !password) {
-      oops.gui.toast("请输入邮箱和密码", false);
+      oops.gui.toast("请输入账号和密码", false);
       return;
     }
     try {
@@ -333,12 +336,15 @@ export class LoginViewComp extends CCView<Login> {
       // 显示登录成功提示
       oops.gui.toast("登录成功！", true);
 
+      // 加载音频设置
+      await audioSettings.load();
+
       await smc.login.addUi(HallViewComp);
       this.remove();
     } catch (e: any) {
       console.error("登录失败:", e);
       // 解析错误信息
-      let errorMsg = "登录失败，请检查邮箱和密码";
+      let errorMsg = "登录失败，请检查账号和密码";
       try {
         const errorText = e?.message || "";
         if (
@@ -359,7 +365,7 @@ export class LoginViewComp extends CCView<Login> {
     const email = this.emailInput?.string || "";
     const password = this.passwordInput?.string || "";
     if (!email || !password) {
-      oops.gui.toast("请输入邮箱和密码", false);
+      oops.gui.toast("请输入账号和密码", false);
       return;
     }
     if (password.length < 6) {

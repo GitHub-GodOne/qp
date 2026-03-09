@@ -18,6 +18,13 @@ import {
   tween,
   EditBox,
   BlockInputEvents,
+  resources,
+  ImageAsset,
+  Texture2D as Tex2D,
+  SpriteAtlas,
+  AudioClip,
+  AudioSource,
+  screen,
 } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
@@ -30,6 +37,9 @@ import { GameSocket } from "../../common/network/GameSocket";
 import { smc } from "../../common/SingletonModuleComp";
 import { GameRecordsViewComp } from "../../game_records/view/GameRecordsViewComp";
 import { GameEvent } from "../../common/config/GameEvent";
+import { audioManager } from "../../common/AudioManager";
+import { audioSettings } from "../../common/AudioSettings";
+import { soundEffect } from "../../common/SoundEffectManager";
 
 const { ccclass } = _decorator;
 
@@ -42,6 +52,7 @@ interface PlayerInfo {
   bet_amount?: number;
   coins?: number;
   wants_banker?: boolean | null;
+  is_ai?: boolean;
 }
 interface CardInfo {
   suit: string;
@@ -79,7 +90,7 @@ const BULL_TEXT: Record<string, string> = {
 
 // 椭圆围坐布局：6个座位，自己永远在底部，座位靠左，牌在右边
 const SEAT_POS = [
-  new Vec3(-60, 250, 0), // 顶部偏左
+  new Vec3(-60, 300, 0), // 顶部偏左（对面位置，再提高20像素）
   new Vec3(260, 180, 0), // 右上
   new Vec3(260, -50, 0), // 右下
   new Vec3(-350, -260, 0), // 底部（自己）— 偏左，牌往右展开
@@ -88,8 +99,8 @@ const SEAT_POS = [
 ];
 // 每个座位的牌展开方向：1=向右, -1=向左
 const CARD_DIR = [1, -1, -1, 1, 1, 1];
-const CARD_W = 56;
-const CARD_H = 82;
+const CARD_W = 70;
+const CARD_H = 102;
 const HAND_Y = -210;
 const HAND_START_X = -120;
 const HAND_GAP = 62;
@@ -148,8 +159,9 @@ export class RoomViewComp extends CCView<Room> {
   private _bubbleTimers: number[] = [];
   private _grabStatusNodes: Node[] = [];
   private _grabLabels: Label[] = [];
-  private _rouletteRunning = false;
-  private _pendingBettingData: any = null;
+  private _pokerAtlas: SpriteAtlas | null = null;
+  private _settingsPanel: Node | null = null;
+  private _settingsCollapsed: boolean = true;
 
   start() {
     this._myPid = smc.login.LoginModel?.pid || "";
@@ -162,6 +174,7 @@ export class RoomViewComp extends CCView<Room> {
     this.handArea();
     this.buttons();
     this.chatPanel();
+    this.settingsPanel();
     // 结果覆盖层 — 永远是最后一个子节点，确保战绩标签渲染在所有牌面之上
     this._resultOverlay = new Node("resultOverlay");
     this._resultOverlay.parent = this.node;
@@ -173,15 +186,36 @@ export class RoomViewComp extends CCView<Room> {
     for (const rn of this._resultNodes) {
       if (rn) rn.parent = this._resultOverlay;
     }
+    // 加载扑克牌图集
+    const atlas = oops.res.get("common/texture/poker", SpriteAtlas);
+    if (atlas) {
+      this._pokerAtlas = atlas;
+      console.log("Poker atlas loaded successfully from cache");
+    } else {
+      console.log("Poker atlas not in cache, loading...");
+      oops.res.load("common/texture/poker", SpriteAtlas, (err, atlas) => {
+        if (err) {
+          console.error("Failed to load poker atlas:", err);
+        } else {
+          this._pokerAtlas = atlas;
+          console.log("Poker atlas loaded successfully");
+        }
+      });
+    }
     this.listen();
     // 主动请求房间状态，防止连接时的 room_state 消息丢失
     GameSocket.send("get_room_state");
+    // 播放斗牛房间背景音乐
+    audioManager.playBGM("Sound/SoundCommon/斗牛房间背景声");
   }
 
   reset() {
     this.stopCountdown();
     this.clearSeatCards();
     GameSocket.clearHandlers();
+    // 停止房间音乐，恢复大厅音乐
+    audioManager.stopBGM();
+    audioManager.playBGM("Sound/SoundCommon/大厅背景声音");
     this.node.destroy();
   }
 
@@ -338,11 +372,15 @@ export class RoomViewComp extends CCView<Room> {
       const s = this.rect(
         `s${i}`,
         this.node,
-        new Size(80, 80),
+        new Size(100, 100),
         new Color(20, 20, 20, 200),
       );
       s.setPosition(SEAT_POS[i]);
-      if (i === 1 || i === 2) {
+      // 座位0（对面）不使用Widget，固定位置
+      if (i === 0) {
+        // 对面座位固定在顶部，不跟随屏幕变化
+        s.setPosition(SEAT_POS[i]);
+      } else if (i === 1 || i === 2) {
         const sw = s.addComponent(Widget);
         sw.isAlignRight = true;
         sw.right = 182;
@@ -361,21 +399,31 @@ export class RoomViewComp extends CCView<Room> {
       const av = this.rect(
         `av${i}`,
         s,
-        new Size(50, 50),
+        new Size(65, 65),
         new Color(70, 70, 70, 255),
       );
-      av.setPosition(0, 8, 0);
+      av.setPosition(0, 10, 0);
       const avLbl = this.lbl(
         `avT${i}`,
         av,
         "空",
-        20,
+        24,
         new Color(120, 120, 120),
         Vec3.ZERO,
-        new Size(50, 50),
+        new Size(65, 65),
       );
       this._avatarNodes.push(av);
       this._avatarLabels.push(avLbl);
+      // 添加点击事件用于添加AI玩家
+      const avBtn = av.addComponent(Button);
+      avBtn.transition = Button.Transition.SCALE;
+      avBtn.zoomScale = 0.95;
+      const avEh = new EventHandler();
+      avEh.target = this.node;
+      avEh.component = "RoomViewComp";
+      avEh.handler = "onAvatarClick";
+      avEh.customEventData = i.toString();
+      avBtn.clickEvents.push(avEh);
       // 庄家标记
       const bkLbl = this.lbl(
         `bk${i}`,
@@ -393,10 +441,10 @@ export class RoomViewComp extends CCView<Room> {
         `nm${i}`,
         s,
         "空座",
-        13,
+        16,
         new Color(180, 180, 180),
-        new Vec3(0, -22, 0),
-        new Size(80, 18),
+        new Vec3(0, -28, 0),
+        new Size(100, 22),
       );
       this._nameLabels.push(nm);
       // 金币
@@ -404,10 +452,10 @@ export class RoomViewComp extends CCView<Room> {
         `cn${i}`,
         s,
         "",
-        12,
+        14,
         new Color(255, 215, 0),
-        new Vec3(0, -36, 0),
-        new Size(80, 16),
+        new Vec3(0, -46, 0),
+        new Size(100, 18),
       );
       this._coinsLabels.push(cn);
       // 下注标签 — 显示在座位上方
@@ -517,53 +565,142 @@ export class RoomViewComp extends CCView<Room> {
     this._grabBankerArea.layer = this.node.layer;
     this._grabBankerArea
       .addComponent(UITransform)
-      .setContentSize(new Size(400, 50));
+      .setContentSize(new Size(500, 60));
     this._grabBankerArea.setPosition(centerX, centerY, 0);
     this._grabBankerArea.active = false;
-    this.btn(
+    const grabYesBtn = this.rect(
       "grabYes",
-      "抢 庄",
-      new Vec3(-80, 0, 0),
+      this._grabBankerArea,
+      new Size(160, 50),
       new Color(200, 130, 20),
-      "onGrabYes",
-    ).parent = this._grabBankerArea;
-    this.btn(
+    );
+    grabYesBtn.setPosition(-100, 0, 0);
+    this.lbl(
+      "grabYes_lbl",
+      grabYesBtn,
+      "抢 庄",
+      20,
+      Color.WHITE,
+      Vec3.ZERO,
+      new Size(160, 50),
+    );
+    const grabYesButton = grabYesBtn.addComponent(Button);
+    grabYesButton.transition = Button.Transition.SCALE;
+    grabYesButton.zoomScale = 0.92;
+    const grabYesEh = new EventHandler();
+    grabYesEh.target = this.node;
+    grabYesEh.component = "RoomViewComp";
+    grabYesEh.handler = "onGrabYes";
+    grabYesButton.clickEvents.push(grabYesEh);
+
+    const grabNoBtn = this.rect(
       "grabNo",
-      "不 抢",
-      new Vec3(80, 0, 0),
+      this._grabBankerArea,
+      new Size(160, 50),
       new Color(100, 100, 100),
-      "onGrabNo",
-    ).parent = this._grabBankerArea;
+    );
+    grabNoBtn.setPosition(100, 0, 0);
+    this.lbl(
+      "grabNo_lbl",
+      grabNoBtn,
+      "不 抢",
+      20,
+      Color.WHITE,
+      Vec3.ZERO,
+      new Size(160, 50),
+    );
+    const grabNoButton = grabNoBtn.addComponent(Button);
+    grabNoButton.transition = Button.Transition.SCALE;
+    grabNoButton.zoomScale = 0.92;
+    const grabNoEh = new EventHandler();
+    grabNoEh.target = this.node;
+    grabNoEh.component = "RoomViewComp";
+    grabNoEh.handler = "onGrabNo";
+    grabNoButton.clickEvents.push(grabNoEh);
 
     this._bettingArea = new Node("bettingArea");
     this._bettingArea.parent = this.node;
     this._bettingArea.layer = this.node.layer;
     this._bettingArea
       .addComponent(UITransform)
-      .setContentSize(new Size(500, 50));
+      .setContentSize(new Size(600, 60));
     this._bettingArea.setPosition(centerX, centerY, 0);
     this._bettingArea.active = false;
-    this.btn(
+
+    const bet3Btn = this.rect(
       "bet3",
-      "3 分",
-      new Vec3(-120, 0, 0),
+      this._bettingArea,
+      new Size(150, 50),
       new Color(40, 130, 80),
-      "onBet3",
-    ).parent = this._bettingArea;
-    this.btn(
+    );
+    bet3Btn.setPosition(-200, 0, 0);
+    this.lbl(
+      "bet3_lbl",
+      bet3Btn,
+      "3 分",
+      20,
+      Color.WHITE,
+      Vec3.ZERO,
+      new Size(150, 50),
+    );
+    const bet3Button = bet3Btn.addComponent(Button);
+    bet3Button.transition = Button.Transition.SCALE;
+    bet3Button.zoomScale = 0.92;
+    const bet3Eh = new EventHandler();
+    bet3Eh.target = this.node;
+    bet3Eh.component = "RoomViewComp";
+    bet3Eh.handler = "onBet3";
+    bet3Button.clickEvents.push(bet3Eh);
+
+    const bet6Btn = this.rect(
       "bet6",
-      "6 分",
-      new Vec3(0, 0, 0),
+      this._bettingArea,
+      new Size(150, 50),
       new Color(170, 130, 20),
-      "onBet6",
-    ).parent = this._bettingArea;
-    this.btn(
+    );
+    bet6Btn.setPosition(0, 0, 0);
+    this.lbl(
+      "bet6_lbl",
+      bet6Btn,
+      "6 分",
+      20,
+      Color.WHITE,
+      Vec3.ZERO,
+      new Size(150, 50),
+    );
+    const bet6Button = bet6Btn.addComponent(Button);
+    bet6Button.transition = Button.Transition.SCALE;
+    bet6Button.zoomScale = 0.92;
+    const bet6Eh = new EventHandler();
+    bet6Eh.target = this.node;
+    bet6Eh.component = "RoomViewComp";
+    bet6Eh.handler = "onBet6";
+    bet6Button.clickEvents.push(bet6Eh);
+
+    const bet10Btn = this.rect(
       "bet10",
-      "10 分",
-      new Vec3(120, 0, 0),
+      this._bettingArea,
+      new Size(150, 50),
       new Color(200, 60, 30),
-      "onBet10",
-    ).parent = this._bettingArea;
+    );
+    bet10Btn.setPosition(200, 0, 0);
+    this.lbl(
+      "bet10_lbl",
+      bet10Btn,
+      "10 分",
+      20,
+      Color.WHITE,
+      Vec3.ZERO,
+      new Size(150, 50),
+    );
+    const bet10Button = bet10Btn.addComponent(Button);
+    bet10Button.transition = Button.Transition.SCALE;
+    bet10Button.zoomScale = 0.92;
+    const bet10Eh = new EventHandler();
+    bet10Eh.target = this.node;
+    bet10Eh.component = "RoomViewComp";
+    bet10Eh.handler = "onBet10";
+    bet10Button.clickEvents.push(bet10Eh);
   }
 
   private listen() {
@@ -646,8 +783,10 @@ export class RoomViewComp extends CCView<Room> {
       this._leaveBtn!.active = false;
       this._grabBankerArea!.active = true;
       this._bettingArea!.active = false;
+      // 隐藏所有抢庄标签和庄家标签
       for (let i = 0; i < 6; i++) {
         if (this._grabLabels[i]) this._grabLabels[i].node.active = false;
+        if (this._bankerLabels[i]) this._bankerLabels[i].node.active = false;
       }
       this.startCountdown(d.countdown_secs || 10);
     });
@@ -656,7 +795,7 @@ export class RoomViewComp extends CCView<Room> {
       this._bankerPid = d.banker_pid || "";
       this._grabBankerArea!.active = false;
       this.stopCountdown();
-      // 隐藏所有抢庄标签
+      // 隐藏所有抢庄标签和庄家标签
       for (let i = 0; i < 6; i++) {
         if (this._grabLabels[i]) this._grabLabels[i].node.active = false;
         if (this._bankerLabels[i]) this._bankerLabels[i].node.active = false;
@@ -664,20 +803,18 @@ export class RoomViewComp extends CCView<Room> {
       const candidates: { user_pid: string; seat: number }[] =
         d.candidates || [];
       const bankerPid = d.banker_pid || "";
+
       if (candidates.length > 1) {
         this.rouletteSelectBanker(candidates, bankerPid);
       } else {
+        // 只有1个候选人，直接显示庄家标记
         this.showBankerMark(bankerPid);
         this.setStatus("庄家已选");
       }
     });
     GameSocket.on("betting_phase", (d: any) => {
       if (!this.node || !this.node.isValid) return;
-      // 如果选庄动画还在播放，暂存下注数据，等动画结束再显示
-      if (this._rouletteRunning) {
-        this._pendingBettingData = d;
-        return;
-      }
+      // 后台已经延迟发送，直接显示下注界面
       this.showBettingPhase(d);
     });
     GameSocket.on("all_bets_placed", (_d: any) => {
@@ -794,29 +931,33 @@ export class RoomViewComp extends CCView<Room> {
       const p = players.find((x) => x.seat === serverSeat);
       if (p) {
         const isMe = p.user_pid === this._myPid;
-        nm.string = isMe ? `${p.name}(我)` : p.name;
+        const namePrefix = p.is_ai ? "[AI]" : "";
+        nm.string = isMe ? `${p.name}(我)` : `${namePrefix}${p.name}`;
         nm.color = Color.WHITE;
         cnLbl.string = `${p.coins ?? 0} 币`;
-        if (bkLbl) bkLbl.node.active = !this._rouletteRunning && !!p.is_banker;
-        // 下注显示
+        // 庄家标签不在这里显示，由 showBankerMark 在动画结束后显示
+        // if (bkLbl) bkLbl.node.active = !!p.is_banker;
+
+        // 下注显示 - 只显示已下注的金额，不显示"庄家"标签
         if (p.bet_amount) {
           betLbl.string = `${p.bet_amount}分`;
-          betLbl.node.active = true;
-        } else if (p.is_banker) {
-          betLbl.string = "庄家";
-          betLbl.color = new Color(255, 215, 0);
           betLbl.node.active = true;
         } else {
           betLbl.node.active = false;
         }
-        // 抢庄状态显示
+
+        // 抢庄状态显示 - 只在抢庄阶段显示
         const grabLbl = this._grabLabels[i];
         if (grabLbl) {
-          if (p.wants_banker === true) {
+          // 只在明确的"抢庄中"阶段显示抢庄标签
+          const currentPhase = this._statusLbl?.string || "";
+          const isGrabPhase = currentPhase === "抢庄中";
+
+          if (isGrabPhase && p.wants_banker === true) {
             grabLbl.string = "抢庄";
             grabLbl.color = new Color(100, 255, 100);
             grabLbl.node.active = true;
-          } else if (p.wants_banker === false) {
+          } else if (isGrabPhase && p.wants_banker === false) {
             grabLbl.string = "不抢";
             grabLbl.color = new Color(150, 150, 150);
             grabLbl.node.active = true;
@@ -879,16 +1020,19 @@ export class RoomViewComp extends CCView<Room> {
     const myDispIdx = 3;
     const seatPos = SEAT_POS[myDispIdx];
 
+    // 先对手牌进行排列：找到能凑成10的倍数的3张牌
+    const arrangedHand = this.arrangeHand(hand);
+
     // 斗牛规则：左3张凑整数，右2张显示牛数，中间留间隔
     const leftGroup = 3;
     const groupGap = 20; // 两组之间的额外间隔
 
     // 复用 dealing_start 阶段已发到位的暗牌，逐张翻转亮牌
     const existingBacks = this._seatCardNodes[myDispIdx];
-    if (existingBacks && existingBacks.length >= hand.length) {
-      for (let i = 0; i < hand.length; i++) {
+    if (existingBacks && existingBacks.length >= arrangedHand.length) {
+      for (let i = 0; i < arrangedHand.length; i++) {
         const node = existingBacks[i];
-        const c = hand[i];
+        const c = arrangedHand[i];
         this._handCards.push(node);
 
         // 重新计算位置，按分组显示
@@ -912,8 +1056,8 @@ export class RoomViewComp extends CCView<Room> {
       this._seatCardNodes[myDispIdx] = [];
     } else {
       // fallback: 没有暗牌时直接在目标位置创建并翻转
-      for (let i = 0; i < hand.length; i++) {
-        const c = hand[i];
+      for (let i = 0; i < arrangedHand.length; i++) {
+        const c = arrangedHand[i];
         const node = this.cardBack(i);
         node.parent = this.node;
         this.setLayerRecursive(node, this.node.layer);
@@ -944,13 +1088,57 @@ export class RoomViewComp extends CCView<Room> {
       this._resultOverlay.setSiblingIndex(this.node.children.length - 1);
   }
 
+  /** 排列手牌：左3张凑整数，右2张显示牛数 */
+  private arrangeHand(hand: CardInfo[]): CardInfo[] {
+    if (hand.length !== 5) return hand;
+
+    // 计算牌的点数（J/Q/K算10点，A算1点）
+    const getValue = (card: CardInfo): number => {
+      if (card.rank > 10) return 10;
+      return card.rank;
+    };
+
+    // 尝试找到3张牌的组合，使其点数和为10的倍数
+    for (let i = 0; i < 3; i++) {
+      for (let j = i + 1; j < 4; j++) {
+        for (let k = j + 1; k < 5; k++) {
+          const sum = getValue(hand[i]) + getValue(hand[j]) + getValue(hand[k]);
+          if (sum % 10 === 0) {
+            // 找到了！重新排列：[i, j, k, 剩余两张]
+            const arranged: CardInfo[] = [hand[i], hand[j], hand[k]];
+            for (let idx = 0; idx < 5; idx++) {
+              if (idx !== i && idx !== j && idx !== k) {
+                arranged.push(hand[idx]);
+              }
+            }
+            return arranged;
+          }
+        }
+      }
+    }
+
+    // 没有找到能凑成10的倍数的组合，返回原始顺序
+    return hand;
+  }
+
   private cardBack(i: number): Node {
-    const n = this.rect(
-      `cb${i}`,
-      null!,
-      new Size(CARD_W, CARD_H),
-      new Color(30, 30, 30),
-    );
+    const n = new Node(`cb${i}`);
+    n.addComponent(UITransform).setContentSize(new Size(CARD_W, CARD_H));
+    const sp = n.addComponent(Sprite);
+    sp.type = Sprite.Type.SIMPLE;
+    sp.sizeMode = Sprite.SizeMode.CUSTOM;
+
+    if (this._pokerAtlas) {
+      const backFrame = this._pokerAtlas.getSpriteFrame("pokerback_bg1");
+      if (backFrame) {
+        sp.spriteFrame = backFrame;
+        return n;
+      }
+    }
+
+    // Fallback to old style if atlas not loaded
+    sp.spriteFrame = this._sf;
+    sp.color = new Color(30, 30, 30);
     const inner = this.rect(
       `cbi${i}`,
       n,
@@ -981,6 +1169,30 @@ export class RoomViewComp extends CCView<Room> {
   private cardFace(node: Node, c: CardInfo) {
     node.removeAllChildren();
     const sp = node.getComponent(Sprite);
+
+    if (this._pokerAtlas && sp) {
+      // Map suit: Spade→1, Heart→2, Diamond→3, Club→4
+      const suitMap: Record<string, number> = {
+        Spade: 1,
+        Heart: 2,
+        Diamond: 3,
+        Club: 4,
+      };
+      const suitNum = suitMap[c.suit] || 1;
+      // Map rank: A (1) → 14 in sprite names, others stay the same
+      const rankNum = c.rank === 1 ? 14 : c.rank;
+      const frameName = `card_${suitNum}_${rankNum}`;
+      const cardFrame = this._pokerAtlas.getSpriteFrame(frameName);
+
+      if (cardFrame) {
+        sp.spriteFrame = cardFrame;
+        sp.type = Sprite.Type.SIMPLE;
+        sp.sizeMode = Sprite.SizeMode.CUSTOM;
+        return;
+      }
+    }
+
+    // Fallback to old text-based style
     if (sp) sp.color = new Color(60, 60, 60);
     const face = this.rect(
       "face",
@@ -1143,7 +1355,7 @@ export class RoomViewComp extends CCView<Room> {
         14,
         ccColor,
         new Vec3(125, rowY, 0),
-        new Size(60, rowH),
+        new Size(100, rowH),
       );
     }
     // 更新所有玩家金币
@@ -1198,6 +1410,9 @@ export class RoomViewComp extends CCView<Room> {
     this.closeRecordsDialog();
     GameSocket.send("leave_room");
     GameSocket.close();
+    // 恢复大厅背景音乐
+    audioManager.stopBGM();
+    audioManager.playBGM("Sound/SoundCommon/大厅背景声音");
     oops.message.dispatchEvent(GameEvent.UserInfoChanged);
     oops.gui.remove(UIID.RoomViewComp);
   }
@@ -1274,6 +1489,10 @@ export class RoomViewComp extends CCView<Room> {
     this.setStatus("等待其他玩家下注...");
   }
   private showBettingPhase(d: any) {
+    // 防止重复调用
+    if (this._bettingArea!.active) {
+      return;
+    }
     this.setStatus("下注中");
     this._grabBankerArea!.active = false;
     if (this._myPid !== (d.banker_pid || "")) {
@@ -1289,6 +1508,9 @@ export class RoomViewComp extends CCView<Room> {
     this.closeRecordsDialog();
     GameSocket.send("leave_room");
     GameSocket.close();
+    // 恢复大厅背景音乐
+    audioManager.stopBGM();
+    audioManager.playBGM("Sound/SoundCommon/大厅背景声音");
     oops.message.dispatchEvent(GameEvent.UserInfoChanged);
     oops.gui.remove(UIID.RoomViewComp);
   }
@@ -1344,6 +1566,13 @@ export class RoomViewComp extends CCView<Room> {
     const serverSeat = this._playerSeatMap.get(bankerPid);
     if (serverSeat == null) return;
     const dispIdx = this.displayIdx(serverSeat);
+
+    // 隐藏所有抢庄标签
+    for (let i = 0; i < 6; i++) {
+      if (this._grabLabels[i]) this._grabLabels[i].node.active = false;
+    }
+
+    // 显示庄家的"庄"标签
     if (this._bankerLabels[dispIdx]) {
       const bkNode = this._bankerLabels[dispIdx].node;
       bkNode.active = true;
@@ -1354,6 +1583,14 @@ export class RoomViewComp extends CCView<Room> {
         .to(0.2, { scale: new Vec3(1, 1, 1) }, { easing: "cubicIn" })
         .start();
     }
+
+    // 显示庄家的"庄家"下注标签
+    if (this._betLabels[dispIdx]) {
+      this._betLabels[dispIdx].string = "庄家";
+      this._betLabels[dispIdx].color = new Color(255, 215, 0);
+      this._betLabels[dispIdx].node.active = true;
+    }
+
     // 恢复所有座位背景
     for (let i = 0; i < 6; i++) {
       const sp = this._seats[i]?.getComponent(Sprite);
@@ -1366,7 +1603,12 @@ export class RoomViewComp extends CCView<Room> {
     bankerPid: string,
   ) {
     this.setStatus("选庄中...");
-    this._rouletteRunning = true;
+
+    // 隐藏所有抢庄标签
+    for (let i = 0; i < 6; i++) {
+      if (this._grabLabels[i]) this._grabLabels[i].node.active = false;
+    }
+
     const dispIndices = candidates.map((c) => this.displayIdx(c.seat));
     const bankerSeat = this._playerSeatMap.get(bankerPid);
     const bankerDisp =
@@ -1396,16 +1638,9 @@ export class RoomViewComp extends CCView<Room> {
     };
     const doStep = () => {
       if (stepIdx >= totalSteps) {
-        this._rouletteRunning = false;
+        // 轮盘动画完成，显示庄家标记
         this.showBankerMark(bankerPid);
         this.setStatus("庄家已选");
-        // 处理在动画期间收到的下注阶段
-        if (this._pendingBettingData) {
-          const data = this._pendingBettingData;
-          this._pendingBettingData = null;
-          // 延迟一小段让玩家看清庄家标记
-          setTimeout(() => this.showBettingPhase(data), 800);
-        }
         return;
       }
       highlight(steps[stepIdx]);
@@ -1472,6 +1707,33 @@ export class RoomViewComp extends CCView<Room> {
     const isBanker: boolean = d.is_banker || false;
     const userPid: string = d.user_pid || "";
 
+    // 播放亮牌音效
+    soundEffect.play("Sound/SoundNiuNiuPutonghua/亮牌声", 1.0);
+
+    // 播放牛型音效
+    const bullSoundMap: Record<string, string> = {
+      None: "没牛",
+      Bull1: "牛一",
+      Bull2: "牛二",
+      Bull3: "牛三",
+      Bull4: "牛四",
+      Bull5: "牛五",
+      Bull6: "牛六",
+      Bull7: "牛七",
+      Bull8: "牛八",
+      Bull9: "牛九",
+      BullBull: "牛牛",
+      Bomb: "炸弹牛",
+      FiveSmall: "五小牛",
+    };
+    const soundName = bullSoundMap[bullType];
+    if (soundName) {
+      // 延迟播放牛型音效，让亮牌声先播放
+      setTimeout(() => {
+        soundEffect.playBullSound(soundName, 1.0);
+      }, 500);
+    }
+
     const oldCards = this._seatCardNodes[dispIdx];
     if (oldCards) {
       oldCards.forEach((n) => {
@@ -1493,90 +1755,109 @@ export class RoomViewComp extends CCView<Room> {
     if (!seatPos) return;
     const dir = CARD_DIR[dispIdx] || 1;
     const newCards: Node[] = [];
-
-    // 斗牛规则：左3张凑整数，右2张显示牛数，中间留间隔
-    const leftGroup = 3; // 左边3张
-    const groupGap = 15; // 两组之间的额外间隔
-
     for (let i = 0; i < hand.length; i++) {
       const c = hand[i];
-      // 深色边框 + 白色牌面，2px边框提供层叠分隔感
-      const card = this.rect(
-        `rv${dispIdx}_${i}`,
-        this.node,
-        new Size(CARD_W, CARD_H),
-        new Color(60, 60, 60),
-      );
-      const face = this.rect(
-        `rvf${dispIdx}_${i}`,
-        card,
-        new Size(CARD_W - 2, CARD_H - 2),
-        new Color(248, 248, 244),
-      );
-      face.setPosition(0, 0, 0);
+      const card = new Node(`rv${dispIdx}_${i}`);
+      card.parent = this.node;
+      card.layer = this.node.layer;
+      card.addComponent(UITransform).setContentSize(new Size(CARD_W, CARD_H));
+      const sp = card.addComponent(Sprite);
+      sp.type = Sprite.Type.SIMPLE;
+      sp.sizeMode = Sprite.SizeMode.CUSTOM;
 
-      // 计算X位置：左3张一组，右2张一组，中间留间隔
-      let tx: number;
-      if (i < leftGroup) {
-        // 左边3张：正常排列
-        tx =
-          dir < 0
-            ? seatPos.x - SEAT_CARD_OFF - (leftGroup - 1 - i) * SEAT_CARD_GAP
-            : seatPos.x + SEAT_CARD_OFF + i * SEAT_CARD_GAP;
+      if (this._pokerAtlas) {
+        // Map suit and rank for sprite atlas
+        const suitMap: Record<string, number> = {
+          Spade: 1,
+          Heart: 2,
+          Diamond: 3,
+          Club: 4,
+        };
+        const suitNum = suitMap[c.suit] || 1;
+        const rankNum = c.rank === 1 ? 14 : c.rank;
+        const frameName = `card_${suitNum}_${rankNum}`;
+        const cardFrame = this._pokerAtlas.getSpriteFrame(frameName);
+
+        if (cardFrame) {
+          sp.spriteFrame = cardFrame;
+        } else {
+          // Fallback to old style
+          sp.spriteFrame = this._sf;
+          sp.color = new Color(60, 60, 60);
+          const face = this.rect(
+            `rvf${dispIdx}_${i}`,
+            card,
+            new Size(CARD_W - 2, CARD_H - 2),
+            new Color(248, 248, 244),
+          );
+          face.setPosition(0, 0, 0);
+          const suit = SUIT_SYMBOL[c.suit] || c.suit;
+          const clr = SUIT_COLOR[c.suit] || new Color(50, 50, 50);
+          const rank = RANK_TEXT[c.rank] || c.rank.toString();
+          const lx = -20;
+          this.lbl(
+            `rvr${dispIdx}_${i}`,
+            face,
+            rank,
+            18,
+            clr,
+            new Vec3(lx, 26, 0),
+            new Size(20, 22),
+          );
+          this.lbl(
+            `rvs${dispIdx}_${i}`,
+            face,
+            suit,
+            11,
+            clr,
+            new Vec3(lx, 10, 0),
+            new Size(16, 14),
+          );
+        }
       } else {
-        // 右边的牌：从第4张开始，加上额外间隔
-        const rightIdx = i - leftGroup; // 0, 1, 2...
-        tx =
-          dir < 0
-            ? seatPos.x -
-              SEAT_CARD_OFF -
-              (leftGroup - 1) * SEAT_CARD_GAP -
-              groupGap -
-              (rightIdx + 1) * SEAT_CARD_GAP
-            : seatPos.x +
-              SEAT_CARD_OFF +
-              leftGroup * SEAT_CARD_GAP +
-              groupGap +
-              rightIdx * SEAT_CARD_GAP;
+        // Fallback to old style if atlas not loaded
+        sp.spriteFrame = this._sf;
+        sp.color = new Color(60, 60, 60);
+        const face = this.rect(
+          `rvf${dispIdx}_${i}`,
+          card,
+          new Size(CARD_W - 2, CARD_H - 2),
+          new Color(248, 248, 244),
+        );
+        face.setPosition(0, 0, 0);
+        const suit = SUIT_SYMBOL[c.suit] || c.suit;
+        const clr = SUIT_COLOR[c.suit] || new Color(50, 50, 50);
+        const rank = RANK_TEXT[c.rank] || c.rank.toString();
+        const lx = -20;
+        this.lbl(
+          `rvr${dispIdx}_${i}`,
+          face,
+          rank,
+          18,
+          clr,
+          new Vec3(lx, 26, 0),
+          new Size(20, 22),
+        );
+        this.lbl(
+          `rvs${dispIdx}_${i}`,
+          face,
+          suit,
+          11,
+          clr,
+          new Vec3(lx, 10, 0),
+          new Size(16, 14),
+        );
       }
 
+      const tx =
+        dir < 0
+          ? seatPos.x - SEAT_CARD_OFF - (hand.length - 1 - i) * SEAT_CARD_GAP
+          : seatPos.x + SEAT_CARD_OFF + i * SEAT_CARD_GAP;
       const ty = seatPos.y;
-      // 使用 z 坐标控制层级
-      // 右边座位(dir=1)：从左往右排列，后面的牌(索引大)应该在上层，用 i
-      // 左边座位(dir=-1)：从右往左排列，后面的牌(索引大)应该在上层，也用 i
-      const tz = i * 10; // 乘以10确保层级差异明显
-      card.setPosition(tx, ty, tz);
+      card.setPosition(tx, ty, 0);
       card.setScale(0, 1, 1);
-
-      const suit = SUIT_SYMBOL[c.suit] || c.suit;
-      const clr = SUIT_COLOR[c.suit] || new Color(50, 50, 50);
-      const rank = RANK_TEXT[c.rank] || c.rank.toString();
-      // rank+suit紧贴露出侧的角落，确保在层叠中可见
-      const lx = -20;
-      this.lbl(
-        `rvr${dispIdx}_${i}`,
-        face,
-        rank,
-        18,
-        clr,
-        new Vec3(lx, 26, 0),
-        new Size(20, 22),
-      );
-      this.lbl(
-        `rvs${dispIdx}_${i}`,
-        face,
-        suit,
-        11,
-        clr,
-        new Vec3(lx, 10, 0),
-        new Size(16, 14),
-      );
       newCards.push(card);
-    }
-
-    // 播放动画
-    for (let i = 0; i < newCards.length; i++) {
-      tween(newCards[i])
+      tween(card)
         .delay(i * 0.08)
         .to(0.2, { scale: new Vec3(1, 1, 1) }, { easing: "backOut" })
         .start();
@@ -1698,9 +1979,12 @@ export class RoomViewComp extends CCView<Room> {
     body.active = false;
     this._chatBody = body;
 
-    // 设置折叠尺寸
+    // 设置折叠尺寸和锚点
     const panelUt = panel.getComponent(UITransform);
-    if (panelUt) panelUt.setContentSize(new Size(180, 30));
+    if (panelUt) {
+      panelUt.setAnchorPoint(0.5, -3.3); // 初始折叠状态使用居中锚点
+      panelUt.setContentSize(new Size(180, 30));
+    }
 
     // 消息列表区域 — 8条消息
     this._chatMsgLabels = [];
@@ -1795,6 +2079,11 @@ export class RoomViewComp extends CCView<Room> {
       new Size(116, 24),
     );
     phLbl.horizontalAlign = HorizontalTextAlignment.LEFT;
+    // 设置 placeholder 标签的锚点
+    const phLblUt = phLbl.node.getComponent(UITransform);
+    if (phLblUt) {
+      phLblUt.setAnchorPoint(0, 1);
+    }
     const eb = ebNode.addComponent(EditBox);
     eb.textLabel = textLbl;
     eb.placeholderLabel = phLbl;
@@ -1830,6 +2119,452 @@ export class RoomViewComp extends CCView<Room> {
     sendBtn.clickEvents.push(sendEh);
   }
 
+  private settingsPanel() {
+    const panel = this.rect(
+      "settingsPanel",
+      this.node,
+      new Size(200, 30),
+      new Color(0, 0, 0, 160),
+    );
+    panel.setPosition(340, 280, 0);
+    const pw = panel.addComponent(Widget);
+    pw.isAlignRight = true;
+    pw.isAlignTop = true;
+    pw.right = 10;
+    pw.top = 70;
+    // 设置背景的锚点为左上角，这样展开时背景向下扩展
+    const panelUt = panel.getComponent(UITransform);
+    if (panelUt) {
+      panelUt.setAnchorPoint(0.5, 0.5);
+    }
+    this._settingsPanel = panel;
+    this._settingsCollapsed = true;
+
+    // 标题
+    this.lbl(
+      "settingsTitle",
+      panel,
+      "设置",
+      14,
+      new Color(255, 215, 0),
+      new Vec3(-20, 0, 0),
+      new Size(120, 20),
+    );
+
+    // 折叠按钮
+    const toggleNode = this.rect(
+      "settingsToggle",
+      panel,
+      new Size(28, 20),
+      new Color(80, 80, 80, 180),
+    );
+    toggleNode.setPosition(72, 0, 0);
+    const toggleLbl = this.lbl(
+      "settingsToggleT",
+      toggleNode,
+      "▼",
+      12,
+      Color.WHITE,
+      Vec3.ZERO,
+      new Size(28, 20),
+    );
+    const toggleBtn = toggleNode.addComponent(Button);
+    toggleBtn.transition = Button.Transition.SCALE;
+    toggleBtn.zoomScale = 0.9;
+    const toggleEh = new EventHandler();
+    toggleEh.target = this.node;
+    toggleEh.component = "RoomViewComp";
+    toggleEh.handler = "onToggleSettings";
+    toggleBtn.clickEvents.push(toggleEh);
+
+    // body 容器
+    const body = new Node("settingsBody");
+    body.parent = panel;
+    body.layer = panel.layer;
+    body.addComponent(UITransform).setContentSize(new Size(200, 240));
+    body.setPosition(0, -120, 0);
+    body.active = false;
+
+    // 语音性别选择
+    this.lbl(
+      "voiceLabel",
+      body,
+      "语音性别:",
+      12,
+      new Color(200, 200, 200),
+      new Vec3(-50, 80, 0),
+      new Size(100, 20),
+    );
+
+    const femaleBtn = this.rect(
+      "femaleBtn",
+      body,
+      new Size(70, 28),
+      new Color(60, 100, 60, 200),
+    );
+    femaleBtn.setPosition(-50, 55, 0);
+    this.lbl(
+      "femaleT",
+      femaleBtn,
+      "女声",
+      11,
+      Color.WHITE,
+      Vec3.ZERO,
+      new Size(70, 28),
+    );
+    const fBtn = femaleBtn.addComponent(Button);
+    fBtn.transition = Button.Transition.SCALE;
+    fBtn.zoomScale = 0.9;
+    const fEh = new EventHandler();
+    fEh.target = this.node;
+    fEh.component = "RoomViewComp";
+    fEh.handler = "onSetVoiceFemale";
+    fBtn.clickEvents.push(fEh);
+
+    const maleBtn = this.rect(
+      "maleBtn",
+      body,
+      new Size(70, 28),
+      new Color(60, 100, 60, 200),
+    );
+    maleBtn.setPosition(50, 55, 0);
+    this.lbl(
+      "maleT",
+      maleBtn,
+      "男声",
+      11,
+      Color.WHITE,
+      Vec3.ZERO,
+      new Size(70, 28),
+    );
+    const mBtn = maleBtn.addComponent(Button);
+    mBtn.transition = Button.Transition.SCALE;
+    mBtn.zoomScale = 0.9;
+    const mEh = new EventHandler();
+    mEh.target = this.node;
+    mEh.component = "RoomViewComp";
+    mEh.handler = "onSetVoiceMale";
+    mBtn.clickEvents.push(mEh);
+
+    // 音效音量
+    this.lbl(
+      "soundLabel",
+      body,
+      "音效音量:",
+      12,
+      new Color(200, 200, 200),
+      new Vec3(-50, 20, 0),
+      new Size(100, 20),
+    );
+
+    const soundDownBtn = this.rect(
+      "soundDown",
+      body,
+      new Size(40, 28),
+      new Color(80, 80, 80, 200),
+    );
+    soundDownBtn.setPosition(-70, -5, 0);
+    this.lbl(
+      "soundDownT",
+      soundDownBtn,
+      "-",
+      16,
+      Color.WHITE,
+      Vec3.ZERO,
+      new Size(40, 28),
+    );
+    const sdBtn = soundDownBtn.addComponent(Button);
+    sdBtn.transition = Button.Transition.SCALE;
+    sdBtn.zoomScale = 0.9;
+    const sdEh = new EventHandler();
+    sdEh.target = this.node;
+    sdEh.component = "RoomViewComp";
+    sdEh.handler = "onSoundVolumeDown";
+    sdBtn.clickEvents.push(sdEh);
+
+    const soundUpBtn = this.rect(
+      "soundUp",
+      body,
+      new Size(40, 28),
+      new Color(80, 80, 80, 200),
+    );
+    soundUpBtn.setPosition(70, -5, 0);
+    this.lbl(
+      "soundUpT",
+      soundUpBtn,
+      "+",
+      16,
+      Color.WHITE,
+      Vec3.ZERO,
+      new Size(40, 28),
+    );
+    const suBtn = soundUpBtn.addComponent(Button);
+    suBtn.transition = Button.Transition.SCALE;
+    suBtn.zoomScale = 0.9;
+    const suEh = new EventHandler();
+    suEh.target = this.node;
+    suEh.component = "RoomViewComp";
+    suEh.handler = "onSoundVolumeUp";
+    suBtn.clickEvents.push(suEh);
+
+    const soundValueLbl = this.lbl(
+      "soundValue",
+      body,
+      "50",
+      14,
+      new Color(255, 215, 0),
+      new Vec3(0, -5, 0),
+      new Size(60, 28),
+    );
+
+    // 音乐音量
+    this.lbl(
+      "musicLabel",
+      body,
+      "音乐音量:",
+      12,
+      new Color(200, 200, 200),
+      new Vec3(-50, -40, 0),
+      new Size(100, 20),
+    );
+
+    const musicDownBtn = this.rect(
+      "musicDown",
+      body,
+      new Size(40, 28),
+      new Color(80, 80, 80, 200),
+    );
+    musicDownBtn.setPosition(-70, -65, 0);
+    this.lbl(
+      "musicDownT",
+      musicDownBtn,
+      "-",
+      16,
+      Color.WHITE,
+      Vec3.ZERO,
+      new Size(40, 28),
+    );
+    const mdBtn = musicDownBtn.addComponent(Button);
+    mdBtn.transition = Button.Transition.SCALE;
+    mdBtn.zoomScale = 0.9;
+    const mdEh = new EventHandler();
+    mdEh.target = this.node;
+    mdEh.component = "RoomViewComp";
+    mdEh.handler = "onMusicVolumeDown";
+    mdBtn.clickEvents.push(mdEh);
+
+    const musicUpBtn = this.rect(
+      "musicUp",
+      body,
+      new Size(40, 28),
+      new Color(80, 80, 80, 200),
+    );
+    musicUpBtn.setPosition(70, -65, 0);
+    this.lbl(
+      "musicUpT",
+      musicUpBtn,
+      "+",
+      16,
+      Color.WHITE,
+      Vec3.ZERO,
+      new Size(40, 28),
+    );
+    const muBtn = musicUpBtn.addComponent(Button);
+    muBtn.transition = Button.Transition.SCALE;
+    muBtn.zoomScale = 0.9;
+    const muEh = new EventHandler();
+    muEh.target = this.node;
+    muEh.component = "RoomViewComp";
+    muEh.handler = "onMusicVolumeUp";
+    muBtn.clickEvents.push(muEh);
+
+    const musicValueLbl = this.lbl(
+      "musicValue",
+      body,
+      "50",
+      14,
+      new Color(255, 215, 0),
+      new Vec3(0, -65, 0),
+      new Size(60, 28),
+    );
+
+    // 全屏按钮
+    const fullscreenBtn = this.rect(
+      "fullscreenBtn",
+      body,
+      new Size(160, 32),
+      new Color(40, 130, 80, 230),
+    );
+    fullscreenBtn.setPosition(0, -105, 0);
+    this.lbl(
+      "fullscreenT",
+      fullscreenBtn,
+      "全屏显示",
+      12,
+      Color.WHITE,
+      Vec3.ZERO,
+      new Size(160, 32),
+    );
+    const fsBtn = fullscreenBtn.addComponent(Button);
+    fsBtn.transition = Button.Transition.SCALE;
+    fsBtn.zoomScale = 0.9;
+    const fsEh = new EventHandler();
+    fsEh.target = this.node;
+    fsEh.component = "RoomViewComp";
+    fsEh.handler = "onToggleFullscreen";
+    fsBtn.clickEvents.push(fsEh);
+
+    // 更新显示
+    this.updateSettingsDisplay();
+  }
+
+  private updateSettingsDisplay() {
+    if (!this._settingsPanel) return;
+    const body = this._settingsPanel.getChildByName("settingsBody");
+    if (!body) return;
+
+    const soundValueLbl = body
+      .getChildByName("soundValue")
+      ?.getComponent(Label);
+    const musicValueLbl = body
+      .getChildByName("musicValue")
+      ?.getComponent(Label);
+
+    if (soundValueLbl) {
+      soundValueLbl.string = audioSettings.soundVolume.toString();
+    }
+    if (musicValueLbl) {
+      musicValueLbl.string = audioSettings.musicVolume.toString();
+    }
+
+    // 更新语音性别按钮颜色
+    const femaleBtn = body.getChildByName("femaleBtn")?.getComponent(Sprite);
+    const maleBtn = body.getChildByName("maleBtn")?.getComponent(Sprite);
+    if (femaleBtn && maleBtn) {
+      if (audioSettings.voiceGender === "female") {
+        femaleBtn.color = new Color(40, 130, 80, 230);
+        maleBtn.color = new Color(60, 100, 60, 200);
+      } else {
+        femaleBtn.color = new Color(60, 100, 60, 200);
+        maleBtn.color = new Color(40, 130, 80, 230);
+      }
+    }
+  }
+
+  protected onToggleSettings() {
+    this._settingsCollapsed = !this._settingsCollapsed;
+    const body = this._settingsPanel?.getChildByName("settingsBody");
+    if (body) body.active = !this._settingsCollapsed;
+    const panelUt = this._settingsPanel?.getComponent(UITransform);
+    if (panelUt) {
+      // 动态设置锚点：折叠时居中，展开时顶部
+      panelUt.setAnchorPoint(0.5, this._settingsCollapsed ? 0.5 : 0.9);
+      panelUt.setContentSize(new Size(200, this._settingsCollapsed ? 20 : 270));
+    }
+    const toggleLbl = this._settingsPanel
+      ?.getChildByName("settingsToggle")
+      ?.getChildByName("settingsToggleT")
+      ?.getComponent(Label);
+    if (toggleLbl) {
+      toggleLbl.string = this._settingsCollapsed ? "▼" : "▲";
+    }
+  }
+
+  protected async onSetVoiceFemale() {
+    try {
+      await audioSettings.setVoiceGender("female");
+      this.updateSettingsDisplay();
+      oops.gui.toast("已切换为女声", true);
+    } catch (e) {
+      console.error("设置语音性别失败:", e);
+      oops.gui.toast("设置失败", false);
+    }
+  }
+
+  protected async onSetVoiceMale() {
+    try {
+      await audioSettings.setVoiceGender("male");
+      this.updateSettingsDisplay();
+      oops.gui.toast("已切换为男声", true);
+    } catch (e) {
+      console.error("设置语音性别失败:", e);
+      oops.gui.toast("设置失败", false);
+    }
+  }
+
+  protected async onSoundVolumeDown() {
+    try {
+      const newVolume = Math.max(0, audioSettings.soundVolume - 10);
+      await audioSettings.setSoundVolume(newVolume);
+      this.updateSettingsDisplay();
+    } catch (e) {
+      console.error("设置音效音量失败:", e);
+    }
+  }
+
+  protected async onSoundVolumeUp() {
+    try {
+      const newVolume = Math.min(100, audioSettings.soundVolume + 10);
+      await audioSettings.setSoundVolume(newVolume);
+      this.updateSettingsDisplay();
+    } catch (e) {
+      console.error("设置音效音量失败:", e);
+    }
+  }
+
+  protected async onMusicVolumeDown() {
+    try {
+      const newVolume = Math.max(0, audioSettings.musicVolume - 10);
+      await audioSettings.setMusicVolume(newVolume);
+      this.updateSettingsDisplay();
+      // 更新当前播放的音乐音量
+      audioManager.setBGMVolume(newVolume / 100);
+    } catch (e) {
+      console.error("设置音乐音量失败:", e);
+    }
+  }
+
+  protected async onMusicVolumeUp() {
+    try {
+      const newVolume = Math.min(100, audioSettings.musicVolume + 10);
+      await audioSettings.setMusicVolume(newVolume);
+      this.updateSettingsDisplay();
+      // 更新当前播放的音乐音量
+      audioManager.setBGMVolume(newVolume / 100);
+    } catch (e) {
+      console.error("设置音乐音量失败:", e);
+    }
+  }
+
+  protected onToggleFullscreen() {
+    if (screen.fullScreen()) {
+      screen.exitFullScreen();
+      oops.gui.toast("已退出全屏", true);
+    } else {
+      screen.requestFullScreen().then(() => {
+        oops.gui.toast("已进入全屏", true);
+      }).catch((err) => {
+        console.error("全屏请求失败:", err);
+        oops.gui.toast("全屏请求失败", false);
+      });
+    }
+  }
+
+  protected onAvatarClick(_ev: Event, displayIdxStr: string) {
+    const displayIdx = parseInt(displayIdxStr, 10);
+    const serverSeat = this.serverIdx(displayIdx);
+
+    // 检查是否是空座位且房间处于等待状态
+    const isEmpty =
+      !this._nameLabels[displayIdx] ||
+      this._nameLabels[displayIdx].string === "空座";
+
+    if (isEmpty && this._statusLbl && this._statusLbl.string.includes("等待")) {
+      // 发送添加AI玩家的请求，指定座位号
+      GameSocket.send("add_ai_player", { seat: serverSeat });
+    }
+  }
+
   private addChatMsg(name: string, text: string) {
     this._chatMsgs.push({ name, text });
     if (this._chatMsgs.length > 8) this._chatMsgs.shift();
@@ -1857,8 +2592,11 @@ export class RoomViewComp extends CCView<Room> {
     this._chatCollapsed = !this._chatCollapsed;
     if (this._chatBody) this._chatBody.active = !this._chatCollapsed;
     const panelUt = this._chatPanel?.getComponent(UITransform);
-    if (panelUt)
-      panelUt.setContentSize(new Size(180, this._chatCollapsed ? 30 : 260));
+    if (panelUt) {
+      // 动态设置锚点：折叠时居中，展开时顶部
+      panelUt.setAnchorPoint(0.5, this._chatCollapsed ? -3.3 : 0.55);
+      panelUt.setContentSize(new Size(180, this._chatCollapsed ? 30 : 320));
+    }
     if (this._chatToggleLbl)
       this._chatToggleLbl.string = this._chatCollapsed ? "▲" : "▼";
   }

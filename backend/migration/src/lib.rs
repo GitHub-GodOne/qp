@@ -8,6 +8,7 @@ mod m20240201_000004_game_records;
 mod m20260305_000001_add_room_config;
 mod m20260306_000002_add_room_password;
 mod m20260307_000003_create_system_config;
+mod m20260308_000001_add_user_audio_settings;
 
 pub struct Migrator;
 
@@ -22,6 +23,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260305_000001_add_room_config::Migration),
             Box::new(m20260306_000002_add_room_password::Migration),
             Box::new(m20260307_000003_create_system_config::Migration),
+            Box::new(m20260308_000001_add_user_audio_settings::Migration),
             // inject-above (do not remove this comment)
         ]
     }

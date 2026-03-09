@@ -36,6 +36,8 @@ struct ClientMsg {
     amount: Option<u32>,
     #[serde(default)]
     text: Option<String>,
+    #[serde(default)]
+    seat: Option<usize>,
 }
 
 #[derive(Debug, Serialize)]
@@ -127,6 +129,7 @@ fn room_state_msg(room_id: &str) -> Option<String> {
                     "coins": p.coins,
                     "wants_banker": p.wants_banker,
                     "is_offline": p.is_offline,
+                    "is_ai": p.is_ai,
                 })
             })
             .collect();
@@ -262,7 +265,13 @@ async fn handle_socket(
             if let Some(state) = room_state_msg(&room_id) {
                 ROOM_MANAGER.broadcast(&room_id, &state);
             }
-            enter_betting(&room_id, &db_for_cleanup);
+            // 延迟进入下注阶段，让前端有时间播放选庄动画
+            let rid = room_id.clone();
+            let db2 = db_for_cleanup.clone();
+            tokio::spawn(async move {
+                tokio::time::sleep(Duration::from_millis(4000)).await;
+                enter_betting(&rid, &db2);
+            });
         } else if phase == GamePhase::Betting && all_bets {
             ROOM_MANAGER.with_room(&room_id, |room| {
                 if let Some(h) = room.timeout_handle.take() {
@@ -305,7 +314,13 @@ fn handle_client_msg(msg: &ClientMsg, user_pid: &str, room_id: &str, db: &Databa
                     if let Some(state) = room_state_msg(room_id) {
                         ROOM_MANAGER.broadcast(room_id, &state);
                     }
-                    enter_betting(room_id, db);
+                    // 延迟进入下注阶段，让前端有时间播放选庄动画
+                    let rid = room_id.to_string();
+                    let db2 = db.clone();
+                    tokio::spawn(async move {
+                        tokio::time::sleep(Duration::from_millis(4000)).await;
+                        enter_betting(&rid, &db2);
+                    });
                 } else if phase == GamePhase::Betting && all_bets {
                     ROOM_MANAGER.with_room(room_id, |room| {
                         if let Some(h) = room.timeout_handle.take() {
@@ -381,6 +396,36 @@ fn handle_client_msg(msg: &ClientMsg, user_pid: &str, room_id: &str, db: &Databa
             if let Some(state) = room_state_msg(room_id) {
                 ROOM_MANAGER.broadcast(room_id, &state);
             }
+
+            // AI玩家自动准备
+            if ready {
+                let rid = room_id.to_string();
+                let db2 = db.clone();
+                tokio::spawn(async move {
+                    tokio::time::sleep(Duration::from_millis(800)).await;
+                    let should_start = ROOM_MANAGER.with_room(&rid, |room| {
+                        if room.phase != GamePhase::Waiting {
+                            return false;
+                        }
+                        // 让所有AI玩家自动准备
+                        for p in &mut room.players {
+                            if p.is_ai && !p.is_ready {
+                                p.is_ready = true;
+                            }
+                        }
+                        room.all_ready()
+                    });
+
+                    if let Some(state) = room_state_msg(&rid) {
+                        ROOM_MANAGER.broadcast(&rid, &state);
+                    }
+
+                    if should_start == Some(true) {
+                        enter_grab_banker(&rid, &db2);
+                    }
+                });
+            }
+
             if should_start == Some(true) {
                 enter_grab_banker(room_id, db);
             }
@@ -420,7 +465,13 @@ fn handle_client_msg(msg: &ClientMsg, user_pid: &str, room_id: &str, db: &Databa
                 if let Some(state) = room_state_msg(room_id) {
                     ROOM_MANAGER.broadcast(room_id, &state);
                 }
-                enter_betting(room_id, db);
+                // 延迟进入下注阶段，让前端有时间播放选庄动画
+                let rid = room_id.to_string();
+                let db2 = db.clone();
+                tokio::spawn(async move {
+                    tokio::time::sleep(Duration::from_millis(4000)).await;
+                    enter_betting(&rid, &db2);
+                });
             }
         }
         "set_bet" => {
@@ -490,6 +541,62 @@ fn handle_client_msg(msg: &ClientMsg, user_pid: &str, room_id: &str, db: &Databa
                 }
             }
         }
+        "add_ai_player" => {
+            // Only allow adding AI if room is in Waiting phase
+            let can_add = ROOM_MANAGER.with_room(room_id, |room| {
+                room.phase == GamePhase::Waiting && room.players.len() < room.max_players
+            });
+
+            if can_add == Some(true) {
+                let target_seat = msg.seat;
+                let result =
+                    ROOM_MANAGER.with_room(room_id, |room| room.add_ai_player(target_seat));
+
+                match result {
+                    Some(Ok(seat)) => {
+                        // Broadcast updated room state
+                        if let Some(state) = room_state_msg(room_id) {
+                            ROOM_MANAGER.broadcast(room_id, &state);
+                        }
+
+                        // AI auto-ready after joining - spawn async task
+                        let ai_pid = ROOM_MANAGER
+                            .with_room(room_id, |room| {
+                                room.players
+                                    .iter()
+                                    .find(|p| p.seat == seat && p.is_ai)
+                                    .map(|p| p.user_pid.clone())
+                            })
+                            .flatten();
+
+                        if let Some(ai_pid) = ai_pid {
+                            let rid = room_id.to_string();
+                            let db2 = db.clone();
+                            tokio::spawn(async move {
+                                tokio::time::sleep(Duration::from_millis(500)).await;
+                                let should_start = ROOM_MANAGER.with_room(&rid, |room| {
+                                    room.set_ready(&ai_pid, true);
+                                    room.phase == GamePhase::Waiting && room.all_ready()
+                                });
+
+                                if let Some(state) = room_state_msg(&rid) {
+                                    ROOM_MANAGER.broadcast(&rid, &state);
+                                }
+
+                                if should_start == Some(true) {
+                                    enter_grab_banker(&rid, &db2);
+                                }
+                            });
+                        }
+                    }
+                    Some(Err(e)) => {
+                        let err_msg = ServerMsg::error(e);
+                        ROOM_MANAGER.broadcast(room_id, &err_msg);
+                    }
+                    None => {}
+                }
+            }
+        }
         _ => {}
     }
 }
@@ -512,6 +619,43 @@ fn enter_grab_banker(room_id: &str, db: &DatabaseConnection) {
     if let Some(state) = room_state_msg(room_id) {
         ROOM_MANAGER.broadcast(room_id, &state);
     }
+
+    // AI players auto-respond immediately
+    let rid_for_ai = room_id.to_string();
+    let db_for_ai = db.clone();
+    tokio::spawn(async move {
+        tokio::time::sleep(Duration::from_millis(800)).await;
+        let all_responded = ROOM_MANAGER.with_room(&rid_for_ai, |room| {
+            use crate::game::ai_player::AIPlayer;
+            let room_type = room.room_type;
+            for p in &mut room.players {
+                if p.is_ai && p.wants_banker.is_none() {
+                    // AI always grabs banker
+                    p.wants_banker = Some(AIPlayer::new(p.seat, room_type).decide_grab_banker());
+                }
+            }
+            room.all_banker_responded()
+        });
+
+        if let Some(state) = room_state_msg(&rid_for_ai) {
+            ROOM_MANAGER.broadcast(&rid_for_ai, &state);
+        }
+
+        if all_responded == Some(true) {
+            ROOM_MANAGER.with_room(&rid_for_ai, |room| {
+                if let Some(h) = room.timeout_handle.take() {
+                    h.abort();
+                }
+            });
+            select_banker(&rid_for_ai);
+            if let Some(state) = room_state_msg(&rid_for_ai) {
+                ROOM_MANAGER.broadcast(&rid_for_ai, &state);
+            }
+            // 延迟进入下注阶段，让前端有时间播放选庄动画
+            tokio::time::sleep(Duration::from_millis(4000)).await;
+            enter_betting(&rid_for_ai, &db_for_ai);
+        }
+    });
 
     // Spawn timeout task
     let rid = room_id.to_string();
@@ -536,6 +680,8 @@ fn enter_grab_banker(room_id: &str, db: &DatabaseConnection) {
                 ROOM_MANAGER.broadcast(&rid, &state);
             }
             select_banker(&rid);
+            // 延迟进入下注阶段，让前端有时间播放选庄动画
+            tokio::time::sleep(Duration::from_millis(4000)).await;
             enter_betting(&rid, &db2);
         }
     });
@@ -603,6 +749,39 @@ fn enter_betting(room_id: &str, db: &DatabaseConnection) {
         json!({ "banker_pid": banker_pid, "countdown_secs": 10 }),
     );
     ROOM_MANAGER.broadcast(room_id, &msg);
+
+    // AI players auto-bet immediately (always max)
+    let rid_for_ai = room_id.to_string();
+    let db_for_ai = db.clone();
+    tokio::spawn(async move {
+        tokio::time::sleep(Duration::from_millis(800)).await;
+        let all_bets = ROOM_MANAGER.with_room(&rid_for_ai, |room| {
+            use crate::game::ai_player::AIPlayer;
+            let room_type = room.room_type;
+            for p in &mut room.players {
+                if p.is_ai && !p.is_banker && p.bet_amount.is_none() {
+                    // AI always bets max (10)
+                    let available = vec![3, 6, 10];
+                    p.bet_amount =
+                        Some(AIPlayer::new(p.seat, room_type).decide_bet_amount(&available) as u32);
+                }
+            }
+            room.all_bets_placed()
+        });
+
+        if let Some(state) = room_state_msg(&rid_for_ai) {
+            ROOM_MANAGER.broadcast(&rid_for_ai, &state);
+        }
+
+        if all_bets == Some(true) {
+            ROOM_MANAGER.with_room(&rid_for_ai, |room| {
+                if let Some(h) = room.timeout_handle.take() {
+                    h.abort();
+                }
+            });
+            deal_and_settle_async(&rid_for_ai, &db_for_ai).await;
+        }
+    });
 
     // Spawn timeout task
     let rid = room_id.to_string();
@@ -812,20 +991,22 @@ async fn deal_and_settle_async(room_id: &str, db: &DatabaseConnection) {
         room.players[bi].coin_change = Some(banker_change);
     });
 
-    // Step 5.6: Persist gold changes to DB
-    let db_updates: Vec<(String, i64)> = ROOM_MANAGER
+    // Step 5.6: Persist gold changes to DB (only for real players, not AI)
+    let db_updates: Vec<(String, i64, bool)> = ROOM_MANAGER
         .with_room(room_id, |room| {
             room.players
                 .iter()
-                .map(|p| (p.user_pid.clone(), p.coins as i64))
+                .map(|p| (p.user_pid.clone(), p.coins as i64, p.is_ai))
                 .collect()
         })
         .unwrap_or_default();
-    for (pid, new_gold) in db_updates {
-        if let Ok(user) = crate::models::users::Model::find_by_pid(db, &pid).await {
-            let mut active: crate::models::_entities::users::ActiveModel = user.into();
-            active.gold = ActiveValue::Set(new_gold);
-            let _ = active.update(db).await;
+    for (pid, new_gold, is_ai) in db_updates {
+        if !is_ai {
+            if let Ok(user) = crate::models::users::Model::find_by_pid(db, &pid).await {
+                let mut active: crate::models::_entities::users::ActiveModel = user.into();
+                active.gold = ActiveValue::Set(new_gold);
+                let _ = active.update(db).await;
+            }
         }
     }
 

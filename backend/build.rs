@@ -12,7 +12,7 @@ fn main() {
         eprintln!("Warning: frontend/dist directory not found.");
         eprintln!("Please build the frontend first:");
         eprintln!("  cd frontend && npm install && npm run build");
-        eprintln!("");
+        eprintln!();
         eprintln!("Attempting to build frontend automatically...");
 
         // 尝试自动构建前端
@@ -26,11 +26,11 @@ fn main() {
                 println!("Frontend built successfully!");
             }
             Ok(status) => {
-                eprintln!("Frontend build failed with status: {}", status);
+                eprintln!("Frontend build failed with status: {status}");
                 std::process::exit(1);
             }
             Err(e) => {
-                eprintln!("Failed to execute frontend build: {}", e);
+                eprintln!("Failed to execute frontend build: {e}");
                 eprintln!("Please build the frontend manually:");
                 eprintln!("  cd frontend && npm install && npm run build");
                 std::process::exit(1);

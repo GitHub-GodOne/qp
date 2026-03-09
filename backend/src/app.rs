@@ -57,10 +57,11 @@ impl Hooks for App {
             .add_route(controllers::rooms::routes())
             .add_route(controllers::ws::routes())
             .add_route(controllers::game_records::routes())
+            .add_route(controllers::user_settings::routes())
             // 静态文件服务 - 必须放在最后，作为 fallback
             .add_route(
                 loco_rs::controller::Routes::new()
-                    .add("/{*path}", get(crate::static_files::serve_static))
+                    .add("/{*path}", get(crate::static_files::serve_static)),
             )
     }
 

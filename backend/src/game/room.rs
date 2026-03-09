@@ -44,6 +44,8 @@ pub struct Player {
     pub coin_change: Option<i32>,
     #[serde(default)]
     pub is_offline: bool,
+    #[serde(default)]
+    pub is_ai: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -121,6 +123,37 @@ impl GameRoom {
         name: &str,
         coins: u32,
     ) -> Result<usize, &'static str> {
+        self.add_player_internal(user_pid, name, coins, false, None)
+    }
+
+    pub fn add_ai_player(&mut self, target_seat: Option<usize>) -> Result<usize, &'static str> {
+        use super::ai_player::AIPlayer;
+
+        // 如果指定了座位，检查该座位是否可用
+        let seat = if let Some(s) = target_seat {
+            if s >= self.max_players {
+                return Err("invalid seat number");
+            }
+            if self.players.iter().any(|p| p.seat == s) {
+                return Err("seat already taken");
+            }
+            s
+        } else {
+            self.next_seat()
+        };
+
+        let ai = AIPlayer::new(seat, self.room_type);
+        self.add_player_internal(&ai.user_pid, &ai.name, ai.coins as u32, true, Some(seat))
+    }
+
+    fn add_player_internal(
+        &mut self,
+        user_pid: &str,
+        name: &str,
+        coins: u32,
+        is_ai: bool,
+        target_seat: Option<usize>,
+    ) -> Result<usize, &'static str> {
         if self.players.len() >= self.max_players {
             return Err("room is full");
         }
@@ -130,7 +163,7 @@ impl GameRoom {
             existing.coins = coins; // Update coins in case they changed
             return Ok(existing.seat);
         }
-        let seat = self.next_seat();
+        let seat = target_seat.unwrap_or_else(|| self.next_seat());
         self.players.push(Player {
             user_pid: user_pid.to_string(),
             name: name.to_string(),
@@ -144,6 +177,7 @@ impl GameRoom {
             is_banker: false,
             coin_change: None,
             is_offline: false,
+            is_ai,
         });
         Ok(seat)
     }
@@ -214,6 +248,18 @@ impl GameRoom {
 
         self.phase = GamePhase::Waiting;
         self.banker_pid = None;
+
+        // 检查并移除金币不足的AI玩家（系统房间）
+        if !self.is_custom {
+            self.players.retain(|p| {
+                if p.is_ai {
+                    self.room_type.can_enter(p.coins)
+                } else {
+                    true // 真人玩家在准备时检查
+                }
+            });
+        }
+
         for p in &mut self.players {
             p.is_ready = false;
             p.wants_banker = None;

@@ -34,21 +34,21 @@ impl Model {
     }
 
     /// 获取新用户初始资源配置
-    pub async fn get_new_user_resources(
-        db: &impl ConnectionTrait,
-    ) -> Result<(i64, i64, i32)> {
-        let gold = Self::get_config_i64(db, "new_user_gold").await.unwrap_or(10000);
-        let diamonds = Self::get_config_i64(db, "new_user_diamonds").await.unwrap_or(100);
-        let cards = Self::get_config_i32(db, "new_user_cards").await.unwrap_or(5);
+    pub async fn get_new_user_resources(db: &impl ConnectionTrait) -> Result<(i64, i64, i32)> {
+        let gold = Self::get_config_i64(db, "new_user_gold")
+            .await
+            .unwrap_or(10000);
+        let diamonds = Self::get_config_i64(db, "new_user_diamonds")
+            .await
+            .unwrap_or(100);
+        let cards = Self::get_config_i32(db, "new_user_cards")
+            .await
+            .unwrap_or(5);
         Ok((gold, diamonds, cards))
     }
 
     /// 更新配置值
-    pub async fn update_config(
-        db: &DatabaseConnection,
-        key: &str,
-        value: &str,
-    ) -> Result<Model> {
+    pub async fn update_config(db: &DatabaseConnection, key: &str, value: &str) -> Result<Model> {
         let config = Entity::find()
             .filter(super::_entities::system_config::Column::ConfigKey.eq(key))
             .one(db)

@@ -16,6 +16,17 @@ pub struct Model {
     pub name: String,
     pub max_players: i16,
     pub status: String,
+    pub payment_type: Option<String>,
+    pub rounds: Option<i16>,
+    pub banker_type: Option<String>,
+    pub max_banker_multi: Option<i16>,
+    pub idle_push_multi: Option<i16>,
+    pub base_score_numerator: Option<i16>,
+    pub base_score_denominator: Option<i16>,
+    pub multiply_rule: Option<String>,
+    pub special_cards: Option<Json>,
+    pub joker_rule: Option<String>,
+    pub flower_rule: Option<String>,
     #[sea_orm(unique)]
     pub room_password: Option<String>,
 }

@@ -27,6 +27,9 @@ pub struct Model {
     pub gold: i64,
     pub diamonds: i64,
     pub cards: i32,
+    pub voice_gender: Option<String>,
+    pub sound_volume: Option<i32>,
+    pub music_volume: Option<i32>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

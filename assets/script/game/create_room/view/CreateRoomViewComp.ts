@@ -10,6 +10,7 @@ import {
   Vec3,
   Sprite,
   HorizontalTextAlignment,
+  VerticalTextAlignment,
   builtinResMgr,
   SpriteFrame,
   Texture2D,
@@ -884,7 +885,7 @@ export class CreateRoomViewComp extends CCView<CreateRoom> {
     sf.texture = tex;
     sf.reset({ texture: tex });
 
-    // 创建遮罩层 - 简单的背景，不添加任何阻挡组件
+    // 创建遮罩层 - 添加阻挡组件防止点击穿透
     const mask = new Node("passwordMask");
     mask.parent = this.node;
     mask.layer = this.node.layer;
@@ -894,11 +895,19 @@ export class CreateRoomViewComp extends CCView<CreateRoom> {
     const maskTransform = mask.addComponent(UITransform);
     maskTransform.setContentSize(new Size(960, 640));
 
+    // 添加 Widget 使遮罩层全屏覆盖
+    const maskWidget = mask.addComponent(Widget);
+    maskWidget.isAlignTop = maskWidget.isAlignBottom = maskWidget.isAlignLeft = maskWidget.isAlignRight = true;
+    maskWidget.top = maskWidget.bottom = maskWidget.left = maskWidget.right = 0;
+
     const maskSprite = mask.addComponent(Sprite);
     maskSprite.type = Sprite.Type.SIMPLE;
     maskSprite.sizeMode = Sprite.SizeMode.CUSTOM;
     maskSprite.spriteFrame = sf;
     maskSprite.color = new Color(0, 0, 0, 180);
+
+    // 添加 BlockInputEvents 组件阻止点击穿透
+    mask.addComponent(BlockInputEvents);
 
     // 保存引用
     this.passwordDialogMask = mask;
@@ -918,6 +927,9 @@ export class CreateRoomViewComp extends CCView<CreateRoom> {
     dialogSprite.spriteFrame = sf;
     dialogSprite.color = new Color(0, 0, 0);
 
+    // 添加 BlockInputEvents 阻止点击穿透
+    dialog.addComponent(BlockInputEvents);
+
     // 内容区（白色）
     const content = new Node("content");
     content.parent = dialog;
@@ -932,6 +944,9 @@ export class CreateRoomViewComp extends CCView<CreateRoom> {
     contentSprite.sizeMode = Sprite.SizeMode.CUSTOM;
     contentSprite.spriteFrame = sf;
     contentSprite.color = new Color(240, 240, 240);
+
+    // 添加 BlockInputEvents 阻止点击穿透
+    content.addComponent(BlockInputEvents);
 
     // 标题
     const titleNode = new Node("title");
@@ -949,30 +964,14 @@ export class CreateRoomViewComp extends CCView<CreateRoom> {
     titleLabel.horizontalAlign = HorizontalTextAlignment.CENTER;
     titleLabel.isBold = true;
 
-    // 提示文字
-    const hintNode = new Node("hint");
-    hintNode.parent = content;
-    hintNode.layer = content.layer;
-    hintNode.setPosition(new Vec3(0, 40, 0));
-
-    const hintTransform = hintNode.addComponent(UITransform);
-    hintTransform.setContentSize(new Size(400, 40));
-    hintTransform.setAnchorPoint(0, 1);
-
-    const hintLabel = hintNode.addComponent(Label);
-    hintLabel.string = "请输入7位数字密码";
-    hintLabel.fontSize = 24;
-    hintLabel.color = new Color(100, 100, 100);
-    hintLabel.horizontalAlign = HorizontalTextAlignment.CENTER;
-
-    // 输入框 - 完全模仿大厅的方式
+    // 输入框 - 加大尺寸
     const inputNode = new Node("inputBg");
     inputNode.parent = content;
     inputNode.layer = content.layer;
-    inputNode.setPosition(new Vec3(0, -20, 0));
+    inputNode.setPosition(new Vec3(0, 10, 0));
 
     const inputTransform = inputNode.addComponent(UITransform);
-    inputTransform.setContentSize(new Size(350, 60));
+    inputTransform.setContentSize(new Size(450, 80)); // 进一步增大到 450x80
 
     const inputSprite = inputNode.addComponent(Sprite);
     inputSprite.type = Sprite.Type.SIMPLE;
@@ -980,12 +979,43 @@ export class CreateRoomViewComp extends CCView<CreateRoom> {
     inputSprite.spriteFrame = sf;
     inputSprite.color = new Color(255, 255, 255);
 
-    // EditBox - 使用和大厅一样的配置
+    // 创建文本标签节点
+    const textLabelNode = new Node("TEXT_LABEL");
+    textLabelNode.parent = inputNode;
+    textLabelNode.layer = inputNode.layer;
+    const textLabelTransform = textLabelNode.addComponent(UITransform);
+    textLabelTransform.setContentSize(new Size(440, 76));
+    textLabelTransform.setAnchorPoint(0, 1);
+    const textLabel = textLabelNode.addComponent(Label);
+    textLabel.string = "";
+    textLabel.fontSize = 36;
+    textLabel.color = new Color(0, 0, 0);
+    textLabel.horizontalAlign = HorizontalTextAlignment.LEFT;
+    textLabel.verticalAlign = VerticalTextAlignment.CENTER;
+
+    // 创建 placeholder 标签节点
+    const placeholderLabelNode = new Node("PLACEHOLDER_LABEL");
+    placeholderLabelNode.parent = inputNode;
+    placeholderLabelNode.layer = inputNode.layer;
+    const placeholderLabelTransform = placeholderLabelNode.addComponent(UITransform);
+    placeholderLabelTransform.setContentSize(new Size(440, 76));
+    placeholderLabelTransform.setAnchorPoint(0, 1);
+    const placeholderLabel = placeholderLabelNode.addComponent(Label);
+    placeholderLabel.string = "请输入7位数字密码";
+    placeholderLabel.fontSize = 36;
+    placeholderLabel.color = new Color(150, 150, 150);
+    placeholderLabel.horizontalAlign = HorizontalTextAlignment.LEFT;
+    placeholderLabel.verticalAlign = VerticalTextAlignment.CENTER;
+
+    // EditBox - 增大字体，使用自定义 label
     const editBox = inputNode.addComponent(EditBox);
+    editBox.textLabel = textLabel;
+    editBox.placeholderLabel = placeholderLabel;
     editBox.maxLength = 7;
-    editBox.placeholder = "请输入7位数字";
-    editBox.fontSize = 28;
-    editBox.inputMode = EditBox.InputMode.SINGLE_LINE; // 和大厅一样
+    editBox.placeholder = "请输入7位数字密码";
+    editBox.fontSize = 36;
+    editBox.inputMode = EditBox.InputMode.SINGLE_LINE;
+    editBox.returnType = EditBox.KeyboardReturnType.DONE;
 
     console.log("创建密码输入框，layer:", inputNode.layer);
 
@@ -1030,40 +1060,42 @@ export class CreateRoomViewComp extends CCView<CreateRoom> {
       sf,
     );
 
+    // 定义确认逻辑函数
+    const handleConfirm = async () => {
+      const password = editBox.string.trim();
+
+      // 验证密码格式
+      if (!password || password.length !== 7) {
+        oops.gui.toast("请输入7位数字房间密码", false);
+        return;
+      }
+      if (!/^\d{7}$/.test(password)) {
+        oops.gui.toast("房间密码必须是7位数字", false);
+        return;
+      }
+
+      // 保存密码到配置
+      this.config.room_password = password;
+
+      // 恢复 ScrollView
+      if (scrollComp) {
+        scrollComp.enabled = true;
+        console.log("已恢复 ScrollView 触摸");
+      }
+
+      // 清空引用并关闭弹窗
+      this.passwordDialogMask = null;
+      mask.destroy();
+
+      // 创建房间
+      await this.createRoomWithPassword();
+    };
+
     // 确认按钮点击事件
-    confirmBtn.on(
-      Node.EventType.TOUCH_END,
-      async () => {
-        const password = editBox.string.trim();
+    confirmBtn.on(Node.EventType.TOUCH_END, handleConfirm, this);
 
-        // 验证密码格式
-        if (!password || password.length !== 7) {
-          oops.gui.toast("请输入7位数字房间密码", false);
-          return;
-        }
-        if (!/^\d{7}$/.test(password)) {
-          oops.gui.toast("房间密码必须是7位数字", false);
-          return;
-        }
-
-        // 保存密码到配置
-        this.config.room_password = password;
-
-        // 恢复 ScrollView
-        if (scrollComp) {
-          scrollComp.enabled = true;
-          console.log("已恢复 ScrollView 触摸");
-        }
-
-        // 清空引用并关闭弹窗
-        this.passwordDialogMask = null;
-        mask.destroy();
-
-        // 创建房间
-        await this.createRoomWithPassword();
-      },
-      this,
-    );
+    // EditBox 回车事件 - 触发确认
+    editBox.node.on("editing-return", handleConfirm, this);
 
     // 取消按钮
     const cancelBtn = new Node("cancelBtn");

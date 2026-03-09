@@ -29,11 +29,7 @@ impl MigrationTrait for Migration {
                             .string()
                             .not_null(),
                     )
-                    .col(
-                        ColumnDef::new(SystemConfig::Description)
-                            .string()
-                            .null(),
-                    )
+                    .col(ColumnDef::new(SystemConfig::Description).string().null())
                     .col(
                         ColumnDef::new(SystemConfig::CreatedAt)
                             .timestamp_with_time_zone()
